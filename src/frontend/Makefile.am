@@ -1,7 +1,7 @@
 AM_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../packet $(XCBPRESENT_CFLAGS) $(PANGOCAIRO_CFLAGS) $(CXX11_FLAGS)
 AM_CXXFLAGS = $(PICKY_CXXFLAGS)
 
-bin_PROGRAMS += koho-client
+bin_PROGRAMS = koho-client
 koho_client_SOURCES = koho-client.cc trivial_queue.hh
 koho_client_LDADD = -lrt ../util/libutil.a ../packet/libpacket.a
 koho_client_LDFLAGS = -pthread
