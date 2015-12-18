@@ -137,33 +137,33 @@ int TunnelClient<FerryQueueType>::wait_for_exit( void )
 
 template <class FerryQueueType>
 int TunnelClient<FerryQueueType>::Ferry::loop( FerryQueueType & ferry_queue,
-                                              FileDescriptor & tun,
-                                              FileDescriptor & sibling )
+                                              FileDescriptor & local_tun,
+                                              FileDescriptor & server )
 {
-    /* tun device gets datagram -> read it -> give to ferry */
-    add_simple_input_handler( tun, 
+    /* local_tun device gets datagram -> read it -> give to ferry */
+    add_simple_input_handler( local_tun,
                               [&] () {
-                                  ferry_queue.read_packet( tun.read() );
+                                  ferry_queue.read_packet( local_tun.read() );
                                   return ResultType::Continue;
                               } );
 
-    /* we get datagram from sibling process -> write it to tun device */
-    add_simple_input_handler( sibling,
+    /* we get datagram from server -> write it to local_tun device or give to http proxy */
+    add_simple_input_handler( server,
                               [&] () {
-                                  tun.write( sibling.read() );
+                                  local_tun.write( server.read() );
                                   return ResultType::Continue;
                               } );
 
-    /* ferry ready to write datagram -> send to sibling process */
-    add_action( Poller::Action( sibling, Direction::Out,
+    /* ferry ready to write datagram -> send to server process */
+    add_action( Poller::Action( server, Direction::Out,
                                 [&] () {
-                                    ferry_queue.write_packets( sibling );
+                                    ferry_queue.write_packets( server );
                                     return ResultType::Continue;
                                 },
                                 [&] () { return ferry_queue.pending_output(); } ) );
 
     /* exit if finished */
-    add_action( Poller::Action( sibling, Direction::Out,
+    add_action( Poller::Action( server, Direction::Out,
                                 [&] () {
                                     return ResultType::Exit;
                                 },
