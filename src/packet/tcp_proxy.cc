@@ -19,7 +19,7 @@
 using namespace std;
 using namespace PollerShortNames;
 
-HTTPProxy::HTTPProxy( const Address & listener_addr )
+TCPProxy::TCPProxy( const Address & listener_addr )
     : listener_socket_()
 {
     listener_socket_.bind( listener_addr );
@@ -27,7 +27,7 @@ HTTPProxy::HTTPProxy( const Address & listener_addr )
 }
 
 template <class SocketType>
-void HTTPProxy::loop( SocketType & server, SocketType & client )
+void TCPProxy::loop( SocketType & server, SocketType & client )
 {
     Poller poller;
 
@@ -76,7 +76,7 @@ void HTTPProxy::loop( SocketType & server, SocketType & client )
     }
 }
 
-void HTTPProxy::handle_tcp( )
+void TCPProxy::handle_tcp( )
 {
     thread newthread( [&] ( TCPSocket client ) {
             try {
@@ -97,10 +97,10 @@ void HTTPProxy::handle_tcp( )
     newthread.detach();
 }
 
-/* register this HTTPProxy's TCP listener socket to handle events with
+/* register this TCPProxy's TCP listener socket to handle events with
    the given event_loop, saving request-response pairs to the given
    backing_store (which is captured and must continue to persist) */
-void HTTPProxy::register_handlers( EventLoop & event_loop )
+void TCPProxy::register_handlers( EventLoop & event_loop )
 {
     event_loop.add_simple_input_handler( tcp_listener(),
                                          [&] () {

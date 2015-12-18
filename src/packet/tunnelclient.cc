@@ -88,11 +88,11 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
             //NAT nat_rule( ingress_addr() );
 
             /* set up http proxy for tcp */
-            HTTPProxy http_proxy( ingress_addr() );
+            TCPProxy tcp_proxy( ingress_addr() );
 
             /* set up dnat */
-            DNAT dnat( http_proxy.tcp_listener().local_address(), "ingress" );
-            cerr << "DNAT TOO " << http_proxy.tcp_listener().local_address().str() << endl;
+            DNAT dnat( tcp_proxy.tcp_listener().local_address(), "ingress" );
+            cerr << "DNAT TOO " << tcp_proxy.tcp_listener().local_address().str() << endl;
 
             /* run dnsmasq as local caching nameserver */
             inner_ferry.add_child_process( start_dnsmasq( { "-S", dns_addr_.str( "#" ) } ) );
@@ -114,11 +114,12 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
 
                     return ezexec( command, true );
                 } );
+
             /* do the actual recording in a different unprivileged child */
             inner_ferry.add_child_process( "theproxy", [&]() {
                     EventLoop proxy_event_loop;
                     //dns_outside.register_handlers( recordr_event_loop );
-                    http_proxy.register_handlers( proxy_event_loop );
+                    tcp_proxy.register_handlers( proxy_event_loop );
                     return proxy_event_loop.loop();
                     } );
 
