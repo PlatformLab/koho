@@ -18,7 +18,6 @@
 #include "bindworkaround.hh"
 #include "config.h"
 #include "nat.hh"
-#include "tcp_proxy.hh"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -27,11 +26,13 @@ template <class FerryQueueType>
 TunnelClient<FerryQueueType>::TunnelClient( char ** const user_environment,
                                             const Address & server_address,
                                             const Address & private_address,
-                                            const Address & dns_addr )
+                                            const Address & dns_address,
+                                            const Address & server_tcp_splitter_address )
     : user_environment_( user_environment ),
-      egress_ingress( Address( dns_addr.ip(), "0" ), private_address ),
+      egress_ingress( Address( dns_address.ip(), "0" ), private_address ),
       nameserver_( first_nameserver() ),
-      dns_addr_( dns_addr ),
+      dns_addr_( dns_address ),
+      tcp_splitter_( private_address, server_tcp_splitter_address ),
       server_socket_(),
       event_loop_()
 {
@@ -87,12 +88,8 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
 
             //NAT nat_rule( ingress_addr() );
 
-            /* set up http proxy for tcp */
-            TCPProxy tcp_proxy( ingress_addr() );
-
             /* set up dnat */
-            DNAT dnat( tcp_proxy.tcp_listener().local_address(), "ingress" );
-            cerr << "DNAT TOO " << tcp_proxy.tcp_listener().local_address().str() << endl;
+            DNAT dnat( tcp_splitter_.tcp_listener().local_address(), "ingress" );
 
             /* run dnsmasq as local caching nameserver */
             inner_ferry.add_child_process( start_dnsmasq( { "-S", dns_addr_.str( "#" ) } ) );
@@ -115,12 +112,12 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
                     return ezexec( command, true );
                 } );
 
-            /* do the actual recording in a different unprivileged child */
-            inner_ferry.add_child_process( "theproxy", [&]() {
-                    EventLoop proxy_event_loop;
+            /* set up handlers for local instance of tcp splitter */
+            inner_ferry.add_child_process( "tcp_splitter", [&]() {
+                    EventLoop tcp_splitter_event_loop;
                     //dns_outside.register_handlers( recordr_event_loop );
-                    tcp_proxy.register_handlers( proxy_event_loop );
-                    return proxy_event_loop.loop();
+                    tcp_splitter_.register_handlers( tcp_splitter_event_loop );
+                    return tcp_splitter_event_loop.loop();
                     } );
 
 

@@ -17,6 +17,7 @@
 #include "exception.hh"
 #include "bindworkaround.hh"
 #include "config.h"
+#include "tcp_splitter_server.hh"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -68,10 +69,13 @@ void TunnelServer<FerryQueueType>::start_downlink( Targs&&... Fargs )
 
             Ferry outer_ferry;
 
+            TCP_Splitter_Server greg( Address( egress_addr().ip(), 0 ) );
+
             dns_outside_.register_handlers( outer_ferry );
             cout << "koho-client " << ingress_addr().ip() << " ";
             cout << dns_outside_.udp_listener().local_address().str( " " );
             cout << " " << listening_socket_.local_address().port();
+            cout << " " << greg.tcp_listener().local_address().port();
             //cout << " [server ip]" << endl; XXX go back to this later
             cout << " 127.1" << endl;
 
