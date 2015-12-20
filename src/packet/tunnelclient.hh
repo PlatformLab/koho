@@ -12,7 +12,6 @@
 #include "event_loop.hh"
 #include "socketpair.hh"
 #include "socket.hh"
-#include "tcp_splitter_client.hh"
 
 template <class FerryQueueType>
 class TunnelClient
@@ -22,7 +21,7 @@ private:
     std::pair<Address, Address> egress_ingress;
     Address nameserver_;
     Address dns_addr_;
-    TCP_Splitter_Client tcp_splitter_;
+    Address splitter_dest_address_;
 
     UDPSocket server_socket_;
 

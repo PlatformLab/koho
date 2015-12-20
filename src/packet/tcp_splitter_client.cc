@@ -23,7 +23,9 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
     : listener_socket_(), 
     destination_socket_()
 {
+    cout << "trying to bind to " << listener_addr.str() << endl;
     listener_socket_.bind( listener_addr );
+    cout << "success" << endl;
     listener_socket_.listen();
     destination_socket_.connect( dest_addr );
 }

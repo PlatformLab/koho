@@ -18,6 +18,7 @@
 #include "bindworkaround.hh"
 #include "config.h"
 #include "nat.hh"
+#include "tcp_splitter_client.hh"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -32,7 +33,7 @@ TunnelClient<FerryQueueType>::TunnelClient( char ** const user_environment,
       egress_ingress( Address( dns_address.ip(), "0" ), private_address ),
       nameserver_( first_nameserver() ),
       dns_addr_( dns_address ),
-      tcp_splitter_( private_address, server_tcp_splitter_address ),
+      splitter_dest_address_( server_tcp_splitter_address ),
       server_socket_(),
       event_loop_()
 {
@@ -87,9 +88,10 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
             Ferry inner_ferry;
 
             //NAT nat_rule( ingress_addr() );
+            TCP_Splitter_Client tcp_splitter( ingress_addr(), splitter_dest_address_ );
 
             /* set up dnat */
-            DNAT dnat( tcp_splitter_.tcp_listener().local_address(), "ingress" );
+            DNAT dnat( tcp_splitter.tcp_listener().local_address(), "ingress" );
 
             /* run dnsmasq as local caching nameserver */
             inner_ferry.add_child_process( start_dnsmasq( { "-S", dns_addr_.str( "#" ) } ) );
@@ -116,7 +118,7 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
             inner_ferry.add_child_process( "tcp_splitter", [&]() {
                     EventLoop tcp_splitter_event_loop;
                     //dns_outside.register_handlers( recordr_event_loop );
-                    tcp_splitter_.register_handlers( tcp_splitter_event_loop );
+                    tcp_splitter.register_handlers( tcp_splitter_event_loop );
                     return tcp_splitter_event_loop.loop();
                     } );
 
