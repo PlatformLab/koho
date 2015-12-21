@@ -17,7 +17,7 @@ using namespace std;
 NATRule::NATRule( const vector< string > & s_args )
     : arguments( s_args )
 {
-    vector< string > command = { IPTABLES, "-w", "-t", "nat", "-A" };
+    vector< string > command = { "/usr/bin/sudo", IPTABLES, "-w", "-t", "nat", "-A" };
     command.insert( command.end(), arguments.begin(), arguments.end() );
     cout << "trying to run! ";
     for (string &s : command )
@@ -30,7 +30,7 @@ NATRule::NATRule( const vector< string > & s_args )
 NATRule::~NATRule()
 {
     try {
-        vector< string > command = { IPTABLES, "-w", "-t", "nat", "-D" };
+        vector< string > command = { "/usr/bin/sudo", IPTABLES, "-w", "-t", "nat", "-D" };
         command.insert( command.end(), arguments.begin(), arguments.end() );
         run( command );
     } catch ( const exception & e ) { /* don't throw from destructor */
