@@ -69,8 +69,9 @@ void TunnelServer<FerryQueueType>::start_downlink( Targs&&... Fargs )
             Ferry outer_ferry;
 
             dns_outside_.register_handlers( outer_ferry );
-            cout << "koho-client " << ingress_addr().ip() << " ";
-            cout << dns_outside_.udp_listener().local_address().str( " " );
+            cout << "koho-client " << ingress_addr().ip();
+            cout << " " << dns_outside_.udp_listener().local_address().str( " " );
+            cout << " " << dns_outside_.udp_listener().local_address().str( " " );// temp nothing for tcp splitter serve
             cout << " " << listening_socket_.local_address().port();
             //cout << " [server ip]" << endl; XXX go back to this later
             cout << " 127.1" << endl;

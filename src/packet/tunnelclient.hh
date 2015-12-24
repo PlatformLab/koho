@@ -23,6 +23,7 @@ private:
     Address dns_addr_;
 
     UDPSocket server_socket_;
+    Address tcp_splitter_server_addr_;
 
     EventLoop event_loop_;
 
@@ -40,7 +41,8 @@ private:
 public:
     TunnelClient( char ** const user_environment, const Address & server_address,
                   const Address & private_address,
-                  const Address & server_private_address );
+                  const Address & dns_addr,
+                  const Address & tcp_splitter_server_addr );
 
     template <typename... Targs>
     void start_uplink( const std::string & shell_prefix,

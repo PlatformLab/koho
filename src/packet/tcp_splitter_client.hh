@@ -14,12 +14,12 @@ class TCP_Splitter_Client
 {
 private:
     TCPSocket listener_socket_;
+    UDPSocket server_socket_;
 
-    template <class SocketType>
-    void loop( SocketType & server, SocketType & client );
+    void loop( UDPSocket & server, TCPSocket & client );
 
 public:
-    TCP_Splitter_Client( const Address & listener_addr );
+    TCP_Splitter_Client( const Address & listener_addr, const Address & server_addr );
 
     TCPSocket & tcp_listener( void ) { return listener_socket_; }
 

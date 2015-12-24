@@ -19,42 +19,43 @@
 using namespace std;
 using namespace PollerShortNames;
 
-TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr )
-    : listener_socket_()
+TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const Address & server_addr )
+    : listener_socket_(),
+    server_socket_()
 {
     listener_socket_.bind( listener_addr );
     listener_socket_.listen();
+    server_socket_.connect( server_addr );
 }
 
-template <class SocketType>
-void TCP_Splitter_Client::loop( SocketType & server, SocketType & client )
+void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_socket )
 {
     Poller poller;
 
-    const Address server_addr = client.original_dest();
-    cerr << " got original dest " << server_addr.str() << endl;
+    const Address dest_addr = incoming_socket.original_dest();
+    cerr << " got original dest " << dest_addr.str() << endl;
 
     /* poll on original connect socket and new connection socket to ferry packets */
     /* responses from server go to response parser */
-    poller.add_action( Poller::Action( server, Direction::In,
+    poller.add_action( Poller::Action( server_socket, Direction::In,
                                        [&] () {
-                                           string buffer = server.read();
+                                           string buffer = server_socket.read();
                                            cerr << "OMG server GOT " << buffer << endl;
                                            return ResultType::Continue;
                                        },
-                                       [&] () { return not client.eof(); } ) );
+                                       [&] () { return not incoming_socket.eof(); } ) );
 
-    /* requests from client go to request parser */
-    poller.add_action( Poller::Action( client, Direction::In,
+    /* incoming requests go to request parser */
+    poller.add_action( Poller::Action( incoming_socket, Direction::In,
                                        [&] () {
-                                           string buffer = client.read();
+                                           string buffer = incoming_socket.read();
                                            cerr << "OMG clien GOT " << buffer << endl;
                                            return ResultType::Continue;
                                        },
-                                       [&] () { return not server.eof(); } ) );
+                                       [&] () { return not server_socket.eof(); } ) );
 
     /* completed requests from client are serialized and sent to server */
-    poller.add_action( Poller::Action( server, Direction::Out,
+    poller.add_action( Poller::Action( server_socket, Direction::Out,
                                        [&] () {
                                            cerr << " server somethign out" << endl;
                                            return ResultType::Continue;
@@ -62,7 +63,7 @@ void TCP_Splitter_Client::loop( SocketType & server, SocketType & client )
                                        [&] () { return true; } ) );
 
     /* completed responses from server are serialized and sent to client */
-    poller.add_action( Poller::Action( client, Direction::Out,
+    poller.add_action( Poller::Action( incoming_socket, Direction::Out,
                                        [&] () {
                                            cerr << " client somethign out" << endl;
                                            return ResultType::Continue;
@@ -78,16 +79,16 @@ void TCP_Splitter_Client::loop( SocketType & server, SocketType & client )
 
 void TCP_Splitter_Client::handle_tcp( )
 {
-    thread newthread( [&] ( TCPSocket client ) {
+    thread newthread( [&] ( TCPSocket incoming_socket ) {
             try {
-                /* get original destination for connection request */
-                Address server_addr = client.original_dest();
+                /* get original destination for connection request
+                Address dest_addr = client.original_dest(); */
 
-                /* create socket and connect to original destination and send original request */
+                /* create socket and connect to original destination and send original request 
                 TCPSocket server;
-                server.connect( server_addr );
+                server.connect( server_addr );*/
 
-                return loop( server, client );
+                return loop( server_socket_, incoming_socket );
             } catch ( const exception & e ) {
                 print_exception( e );
             }

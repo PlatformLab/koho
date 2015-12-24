@@ -27,12 +27,14 @@ template <class FerryQueueType>
 TunnelClient<FerryQueueType>::TunnelClient( char ** const user_environment,
                                             const Address & server_address,
                                             const Address & private_address,
-                                            const Address & dns_addr )
+                                            const Address & dns_addr,
+                                            const Address & tcp_splitter_server_addr )
     : user_environment_( user_environment ),
       egress_ingress( Address( dns_addr.ip(), "0" ), private_address ),
       nameserver_( first_nameserver() ),
       dns_addr_( dns_addr ),
       server_socket_(),
+      tcp_splitter_server_addr_( tcp_splitter_server_addr ),
       event_loop_()
 {
     /* make sure environment has been cleared */
@@ -88,7 +90,7 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
             //NAT nat_rule( ingress_addr() );
 
             /* set up connection splitting for tcp */
-            TCP_Splitter_Client tcp_splitter_client( ingress_addr() );
+            TCP_Splitter_Client tcp_splitter_client( ingress_addr(), tcp_splitter_server_addr_ );
 
             /* set up dnat */
             DNAT dnat( tcp_splitter_client.tcp_listener().local_address(), "ingress" );
