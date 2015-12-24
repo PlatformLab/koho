@@ -34,7 +34,7 @@ TunnelClient<FerryQueueType>::TunnelClient( char ** const user_environment,
       nameserver_( first_nameserver() ),
       dns_addr_( dns_addr ),
       server_socket_(),
-      tcp_splitter_server_addr_( tcp_splitter_server_addr ),
+      tcp_splitter_server_addr_( Address( dns_addr.ip(), tcp_splitter_server_addr.port() ) ),
       event_loop_()
 {
     /* make sure environment has been cleared */

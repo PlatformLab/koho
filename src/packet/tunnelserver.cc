@@ -9,6 +9,7 @@
 #include "tunnelserver.hh"
 #include "netdevice.hh"
 #include "nat.hh"
+#include "tcp_splitter_server.hh"
 #include "util.hh"
 #include "interfaces.hh"
 #include "address.hh"
@@ -68,10 +69,17 @@ void TunnelServer<FerryQueueType>::start_downlink( Targs&&... Fargs )
 
             Ferry outer_ferry;
 
+            TCP_Splitter_Server tcp_splitter_server;
+            /* clreate splitter server process */
+            outer_ferry.add_child_process( "tcp_splitter_server", [&]() {
+                    return tcp_splitter_server.loop();
+                    } );
+
+
             dns_outside_.register_handlers( outer_ferry );
             cout << "koho-client " << ingress_addr().ip();
             cout << " " << dns_outside_.udp_listener().local_address().str( " " );
-            cout << " " << dns_outside_.udp_listener().local_address().str( " " );// temp nothing for tcp splitter serve
+            cout << " " << tcp_splitter_server.local_address().str( " " );
             cout << " " << listening_socket_.local_address().port();
             //cout << " [server ip]" << endl; XXX go back to this later
             cout << " 127.1" << endl;

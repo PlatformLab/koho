@@ -25,6 +25,7 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
 {
     listener_socket_.bind( listener_addr );
     listener_socket_.listen();
+    cout << "connecting to splitter server addr " << splitter_server_addr.str() << endl;
     splitter_server_socket_.connect( splitter_server_addr );
 }
 
@@ -50,6 +51,7 @@ void TCP_Splitter_Client::loop( UDPSocket & splitter_server_socket, TCPSocket & 
                                        [&] () {
                                            string buffer = incoming_socket.read();
                                            cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << buffer << endl;
+                                           splitter_server_socket.write( buffer );
                                            return ResultType::Continue;
                                        },
                                        [&] () { return not incoming_socket.eof(); } ) );
