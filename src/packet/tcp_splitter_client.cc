@@ -19,16 +19,16 @@
 using namespace std;
 using namespace PollerShortNames;
 
-TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const Address & server_addr )
+TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr )
     : listener_socket_(),
-    server_socket_()
+    splitter_server_socket_()
 {
     listener_socket_.bind( listener_addr );
     listener_socket_.listen();
-    server_socket_.connect( server_addr );
+    splitter_server_socket_.connect( splitter_server_addr );
 }
 
-void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_socket )
+void TCP_Splitter_Client::loop( UDPSocket & splitter_server_socket, TCPSocket & incoming_socket )
 {
     Poller poller;
 
@@ -37,13 +37,13 @@ void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_
 
     /* poll on original connect socket and new connection socket to ferry packets */
     /* responses from server go to response parser */
-    poller.add_action( Poller::Action( server_socket, Direction::In,
+    poller.add_action( Poller::Action( splitter_server_socket, Direction::In,
                                        [&] () {
-                                           string buffer = server_socket.read();
+                                           string buffer = splitter_server_socket.read();
                                            cerr << "DATA FROM SPLITTER SERVER: " << buffer << endl;
                                            return ResultType::Continue;
                                        },
-                                       [&] () { return not incoming_socket.eof(); } ) );
+                                       [&] () { return not splitter_server_socket.eof(); } ) );
 
     /* incoming requests go to request parser */
     poller.add_action( Poller::Action( incoming_socket, Direction::In,
@@ -52,7 +52,7 @@ void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_
                                            cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << buffer << endl;
                                            return ResultType::Continue;
                                        },
-                                       [&] () { return not server_socket.eof(); } ) );
+                                       [&] () { return not incoming_socket.eof(); } ) );
 
     /*
     poller.add_action( Poller::Action( server_socket, Direction::Out,
@@ -88,7 +88,7 @@ void TCP_Splitter_Client::handle_tcp( )
                 TCPSocket server;
                 server.connect( server_addr );*/
 
-                return loop( server_socket_, incoming_socket );
+                return loop( splitter_server_socket_, incoming_socket );
             } catch ( const exception & e ) {
                 print_exception( e );
             }
