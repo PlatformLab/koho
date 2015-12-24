@@ -9,7 +9,7 @@
 #include "address.hh"
 #include "socket.hh"
 #include "system_runner.hh"
-#include "tcp_proxy.hh"
+#include "tcp_splitter_client.hh"
 #include "poller.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
@@ -19,7 +19,7 @@
 using namespace std;
 using namespace PollerShortNames;
 
-TCPProxy::TCPProxy( const Address & listener_addr )
+TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr )
     : listener_socket_()
 {
     listener_socket_.bind( listener_addr );
@@ -27,7 +27,7 @@ TCPProxy::TCPProxy( const Address & listener_addr )
 }
 
 template <class SocketType>
-void TCPProxy::loop( SocketType & server, SocketType & client )
+void TCP_Splitter_Client::loop( SocketType & server, SocketType & client )
 {
     Poller poller;
 
@@ -76,7 +76,7 @@ void TCPProxy::loop( SocketType & server, SocketType & client )
     }
 }
 
-void TCPProxy::handle_tcp( )
+void TCP_Splitter_Client::handle_tcp( )
 {
     thread newthread( [&] ( TCPSocket client ) {
             try {
@@ -97,10 +97,10 @@ void TCPProxy::handle_tcp( )
     newthread.detach();
 }
 
-/* register this TCPProxy's TCP listener socket to handle events with
+/* register this TCP_Splitter_Client's TCP listener socket to handle events with
    the given event_loop, saving request-response pairs to the given
    backing_store (which is captured and must continue to persist) */
-void TCPProxy::register_handlers( EventLoop & event_loop )
+void TCP_Splitter_Client::register_handlers( EventLoop & event_loop )
 {
     event_loop.add_simple_input_handler( tcp_listener(),
                                          [&] () {

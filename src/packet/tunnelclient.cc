@@ -18,7 +18,7 @@
 #include "bindworkaround.hh"
 #include "config.h"
 #include "nat.hh"
-#include "tcp_proxy.hh"
+#include "tcp_splitter_client.hh"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -87,12 +87,12 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
 
             //NAT nat_rule( ingress_addr() );
 
-            /* set up http proxy for tcp */
-            TCPProxy tcp_proxy( ingress_addr() );
+            /* set up connection splitting for tcp */
+            TCP_Splitter_Client tcp_splitter_client( ingress_addr() );
 
             /* set up dnat */
-            DNAT dnat( tcp_proxy.tcp_listener().local_address(), "ingress" );
-            cerr << "DNAT TOO " << tcp_proxy.tcp_listener().local_address().str() << endl;
+            DNAT dnat( tcp_splitter_client.tcp_listener().local_address(), "ingress" );
+            cerr << "DNAT TOO " << tcp_splitter_client.tcp_listener().local_address().str() << endl;
 
             /* run dnsmasq as local caching nameserver */
             inner_ferry.add_child_process( start_dnsmasq( { "-S", dns_addr_.str( "#" ) } ) );
@@ -116,10 +116,10 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
                 } );
 
             /* do the actual recording in a different unprivileged child */
-            inner_ferry.add_child_process( "theproxy", [&]() {
+            inner_ferry.add_child_process( "tcp_splitter", [&]() {
                     EventLoop proxy_event_loop;
                     //dns_outside.register_handlers( recordr_event_loop );
-                    tcp_proxy.register_handlers( proxy_event_loop );
+                    tcp_splitter_client.register_handlers( proxy_event_loop );
                     return proxy_event_loop.loop();
                     } );
 
