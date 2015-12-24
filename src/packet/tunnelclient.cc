@@ -117,12 +117,12 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
                     return ezexec( command, true );
                 } );
 
-            /* do the actual recording in a different unprivileged child */
-            inner_ferry.add_child_process( "tcp_splitter", [&]() {
-                    EventLoop proxy_event_loop;
+            /* create splitter client process */
+            inner_ferry.add_child_process( "tcp_splitter_client", [&]() {
+                    EventLoop tcp_splitter_client_event_loop;
                     //dns_outside.register_handlers( recordr_event_loop );
-                    tcp_splitter_client.register_handlers( proxy_event_loop );
-                    return proxy_event_loop.loop();
+                    tcp_splitter_client.register_handlers( tcp_splitter_client_event_loop );
+                    return tcp_splitter_client_event_loop.loop();
                     } );
 
 
