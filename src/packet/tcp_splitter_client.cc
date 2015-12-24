@@ -40,7 +40,7 @@ void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_
     poller.add_action( Poller::Action( server_socket, Direction::In,
                                        [&] () {
                                            string buffer = server_socket.read();
-                                           cerr << "OMG server GOT " << buffer << endl;
+                                           cerr << "DATA FROM SPLITTER SERVER: " << buffer << endl;
                                            return ResultType::Continue;
                                        },
                                        [&] () { return not incoming_socket.eof(); } ) );
@@ -49,26 +49,26 @@ void TCP_Splitter_Client::loop( UDPSocket & server_socket, TCPSocket & incoming_
     poller.add_action( Poller::Action( incoming_socket, Direction::In,
                                        [&] () {
                                            string buffer = incoming_socket.read();
-                                           cerr << "OMG clien GOT " << buffer << endl;
+                                           cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << buffer << endl;
                                            return ResultType::Continue;
                                        },
                                        [&] () { return not server_socket.eof(); } ) );
 
-    /* completed requests from client are serialized and sent to server */
+    /*
     poller.add_action( Poller::Action( server_socket, Direction::Out,
                                        [&] () {
-                                           cerr << " server somethign out" << endl;
+                                           cerr << " sending data to splitter server" << endl;
                                            return ResultType::Continue;
                                        },
                                        [&] () { return true; } ) );
 
-    /* completed responses from server are serialized and sent to client */
     poller.add_action( Poller::Action( incoming_socket, Direction::Out,
                                        [&] () {
-                                           cerr << " client somethign out" << endl;
+                                           cerr << " forwarding data to client inside shell" << endl;
                                            return ResultType::Continue;
                                        },
                                        [&] () { return true; } ) );
+    */
 
     while ( true ) {
         if ( poller.poll( -1 ).result == Poller::Result::Type::Exit ) {
