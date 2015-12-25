@@ -1,7 +1,7 @@
 /* -*-mode:c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-#ifndef TCP_SPLITTER_SERVER_HH 
-#define TCP_SPLITTER_SERVER_HH 
+#ifndef TCP_SPLITTER_SERVER_HH
+#define TCP_SPLITTER_SERVER_HH
 
 #include <string>
 
