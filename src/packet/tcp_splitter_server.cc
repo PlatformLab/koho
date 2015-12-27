@@ -20,7 +20,8 @@ using namespace std;
 using namespace PollerShortNames;
 
 TCP_Splitter_Server::TCP_Splitter_Server( )
-    : splitter_client_socket_()
+    : splitter_client_socket_(),
+    outgoing_sockets_()
 {
     splitter_client_socket_.bind( Address() );
 }

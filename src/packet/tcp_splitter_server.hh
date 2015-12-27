@@ -4,6 +4,7 @@
 #define TCP_SPLITTER_SERVER_HH
 
 #include <string>
+#include <map>
 
 #include "socket.hh"
 #include "autosocket.hh"
@@ -14,6 +15,7 @@ class TCP_Splitter_Server
 {
 private:
     AutoSocket splitter_client_socket_;
+    std::map<Address, TCPSocket> outgoing_sockets_;
 
 public:
     TCP_Splitter_Server( );
