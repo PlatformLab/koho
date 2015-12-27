@@ -6,29 +6,26 @@
 #include <string>
 
 #include "socket.hh"
+#include "poller.hh"
 
 class EventLoop;
-class Poller;
+//class Poller;
 
 class TCP_Splitter_Client
 {
 private:
     TCPSocket listener_socket_;
     UDPSocket splitter_server_socket_;
-
-    void loop( UDPSocket & server, TCPSocket & client );
+    Poller incoming_tcp_connections_;
 
 public:
     TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr );
 
     TCPSocket & tcp_listener( void ) { return listener_socket_; }
 
-    void handle_tcp( );
+    void handle_new_tcp_connection( );
 
-    /* register this TCP_Splitter_Client's TCP listener socket to handle events with
-       the given event_loop, saving request-response pairs to the given
-       backing_store (which is captured and must continue to persist) */
-    void register_handlers( EventLoop & event_loop );
+    int loop( void );
 };
 
 #endif /* TCP_SPLITTER_CLIENT_HH */

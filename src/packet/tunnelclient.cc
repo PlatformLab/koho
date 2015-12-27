@@ -119,10 +119,7 @@ void TunnelClient<FerryQueueType>::start_uplink( const string & shell_prefix,
 
             /* create splitter client process */
             inner_ferry.add_child_process( "tcp_splitter_client", [&]() {
-                    EventLoop tcp_splitter_client_event_loop;
-                    //dns_outside.register_handlers( recordr_event_loop );
-                    tcp_splitter_client.register_handlers( tcp_splitter_client_event_loop );
-                    return tcp_splitter_client_event_loop.loop();
+                    return tcp_splitter_client.loop();
                     } );
 
 
