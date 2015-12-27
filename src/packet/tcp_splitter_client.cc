@@ -32,6 +32,8 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
 
 int TCP_Splitter_Client::loop( void )
 {
+    splitter_server_socket_.write("initial packet from splitter client!");
+
     incoming_tcp_connections_.add_action( Poller::Action( listener_socket_, Direction::In, 
             [&] () {
             handle_new_tcp_connection( );
