@@ -4,6 +4,7 @@
 #define TCP_SPLITTER_CLIENT_HH 
 
 #include <string>
+#include <vector>
 
 #include "socket.hh"
 #include "poller.hh"
@@ -17,6 +18,7 @@ private:
     TCPSocket listener_socket_;
     UDPSocket splitter_server_socket_;
     Poller incoming_tcp_connections_;
+    std::vector<TCPSocket> tcp_sockets_;
 
 public:
     TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr );

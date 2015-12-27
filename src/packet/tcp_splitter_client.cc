@@ -22,7 +22,8 @@ using namespace PollerShortNames;
 TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr )
     : listener_socket_(),
     splitter_server_socket_(),
-    incoming_tcp_connections_()
+    incoming_tcp_connections_(),
+    tcp_sockets_()
 {
     listener_socket_.bind( listener_addr );
     listener_socket_.listen();
@@ -60,7 +61,8 @@ int TCP_Splitter_Client::loop( void )
 void TCP_Splitter_Client::handle_new_tcp_connection( )
 {
     try {
-        TCPSocket incoming_socket = listener_socket_.accept();
+        tcp_sockets_.emplace_back( listener_socket_.accept() );
+        TCPSocket & incoming_socket = tcp_sockets_.back();
         const Address dest_addr = incoming_socket.original_dest();
         cerr << " got original dest " << dest_addr.str() << endl;
 
