@@ -23,7 +23,7 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
     : listener_socket_(),
     splitter_server_socket_(),
     incoming_tcp_connections_(),
-    tcp_sockets_()
+    connections_()
 {
     listener_socket_.bind( listener_addr );
     listener_socket_.listen();
@@ -61,17 +61,21 @@ int TCP_Splitter_Client::loop( void )
 void TCP_Splitter_Client::handle_new_tcp_connection( )
 {
     try {
-        tcp_sockets_.emplace_back( listener_socket_.accept() );
-        TCPSocket & incoming_socket = tcp_sockets_.back();
+        vector<string> empty;
+        unique_ptr<pair<TCPSocket, vector<string>>> to_ins( new pair<TCPSocket, vector<string>>(listener_socket_.accept(), empty));
+        TCPSocket & incoming_socket = to_ins->first;
+        vector<string> & data_buffer = to_ins->second;
+        connections_.insert( make_pair(incoming_socket.original_dest(), move(to_ins)) );
         const Address dest_addr = incoming_socket.original_dest();
         cerr << " got original dest " << dest_addr.str() << endl;
 
         /* incoming datagrams go to splitter server */
         incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
                     [&] () {
-                    string buffer = incoming_socket.read();
-                    cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << buffer << endl;
-                    splitter_server_socket_.write( buffer );
+
+                    data_buffer.emplace_back(incoming_socket.read());
+                    cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << data_buffer.back() << endl;
+                    splitter_server_socket_.write( data_buffer.back() );
                     return ResultType::Continue;
                     },
                     [&] () { return not incoming_socket.eof(); } ) );

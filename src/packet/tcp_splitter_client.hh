@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "socket.hh"
 #include "poller.hh"
@@ -18,7 +19,7 @@ private:
     TCPSocket listener_socket_;
     UDPSocket splitter_server_socket_;
     Poller incoming_tcp_connections_;
-    std::vector<TCPSocket> tcp_sockets_;
+    std::map<Address, std::unique_ptr<std::pair<TCPSocket, std::vector<std::string>>>> connections_;
 
 public:
     TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr );
