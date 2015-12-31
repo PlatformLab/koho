@@ -40,6 +40,11 @@ if test "$DNSMASQ" = "no"; then
 fi
 AC_DEFINE_UNQUOTED([DNSMASQ], ["$DNSMASQ"], [path to dnsmasq])
 
+AC_PATH_PROG([PROTOC], [protoc], [])
+AS_IF([test x"$PROTOC" = x],
+  [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
+
+
 # Checks for SSL certificate file
 AC_CHECK_FILE([/etc/ssl/certs/ssl-cert-snakeoil.pem], [],
               [AC_MSG_ERROR([ssl certificate file is required])])
@@ -78,5 +83,6 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 src/util/Makefile
 		 src/packet/Makefile
-		 src/frontend/Makefile])
+		 src/frontend/Makefile
+		 src/protobuf/Makefile])
 AC_OUTPUT

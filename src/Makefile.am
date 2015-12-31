@@ -1,1 +1,1 @@
-SUBDIRS = util packet frontend 
+SUBDIRS = protobuf util packet frontend

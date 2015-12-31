@@ -31,3 +31,6 @@ Makefile.in
 /src/frontend/koho-client
 /src/frontend/koho-server
 /src/frontend/.libs
+/src/protobuf/split_tcp_packet.pb.cc
+/src/protobuf/split_tcp_packet.pb.h
+
