@@ -3,6 +3,6 @@
 package KohoProtobufs;
 
 message SplitTCPPacket {
-    optional uint64 uid = 1;
-    optional string body = 2;
+    required uint64 uid = 1;
+    required string body = 2;
 }

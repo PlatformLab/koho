@@ -8,7 +8,7 @@
 
 #include "socket.hh"
 #include "autosocket.hh"
-//#include "split_tcp_packet.pb.h"
+#include "split_tcp_packet.pb.h"
 
 class Poller;
 

@@ -32,12 +32,18 @@ int TCP_Splitter_Server::loop( void )
     Poller poller;
 
     poller.add_action( Poller::Action( splitter_client_socket, Direction::In,
-                                       [&] () {
-                                           string buffer = splitter_client_socket.read();
-                                           cerr << "DATA FROM SPLITTER CLIENT: " << buffer << endl;
-                                           return ResultType::Continue;
-                                       },
-                                       [&] () { return not splitter_client_socket.eof(); } ) );
+                [&] () {
+                const string buffer = splitter_client_socket.read();
+
+                KohoProtobufs::SplitTCPPacket recieved_packet;
+                if (!recieved_packet.ParseFromString( buffer ) ) {
+                    cerr << "Failed to deserialize packet, ignoring it." << endl;
+                    return ResultType::Continue;
+                }
+                cerr << "DATA FROM SPLITTER CLIENT uid " << recieved_packet.uid() << " and body " << recieved_packet.body() << endl;
+                return ResultType::Continue;
+                },
+                [&] () { return not splitter_client_socket.eof(); } ) );
 
     while ( true ) {
         if ( poller.poll( -1 ).result == Poller::Result::Type::Exit ) {
