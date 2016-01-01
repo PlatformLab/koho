@@ -34,6 +34,11 @@ inline void handle_new_tcp_connection( const uint64_t connection_uid, Poller &po
     poller.add_action( Poller::Action( toConnect, Direction::In,
                 [&, connection_uid] () {
                     datagrams.emplace_back( toConnect.read() );
+                    if ( datagrams.back().size() == 0 ) {
+                        cerr << "ignoring empty payload tcp packet recieved at splitter server" << endl;
+                        datagrams.pop_back();
+                        return ResultType::Continue;
+                    }
                     cerr << "TCP DATA recieved at splitter server: " << datagrams.back() << "for connection uid " << connection_uid << endl;
 
                     KohoProtobufs::SplitTCPPacket toSend;
@@ -68,7 +73,7 @@ int TCP_Splitter_Server::loop( void )
                     cerr << "Failed to deserialize packet from splitter client, ignoring it." << endl;
                     return ResultType::Continue;
                 }
-                cerr << "DATA FROM SPLITTER CLIENT uid " << recieved_packet.uid() << " and body " << recieved_packet.body() << endl;
+                cerr << "DATA FROM SPLITTER CLIENT uid " << recieved_packet.uid() << " and has body " << recieved_packet.has_body() << endl;
                 auto connection = connections_.find( recieved_packet.uid() );
                 if ( connection  == connections_.end() ) {
                     assert( recieved_packet.has_address() );
@@ -79,7 +84,9 @@ int TCP_Splitter_Server::loop( void )
                     handle_new_tcp_connection( recieved_packet.uid(), poller, toConnect, dest_addr, splitter_client_socket_ );
                 } else {
                     assert( recieved_packet.has_body() );
-                    cerr << "forwarding packet to established connection" << endl;
+                    assert( recieved_packet.body().size() > 0 );
+
+                    cerr << "forwarding packet with body " << recieved_packet.body() << " to established connection" << endl;
                     connection->second.first.write( recieved_packet.body() );
                 }
 

@@ -58,6 +58,7 @@ int TCP_Splitter_Client::loop( void )
                     return ResultType::Continue;
                 } else {
                     assert( recieved_packet.has_body() );
+                    assert( recieved_packet.body().size() > 0 );
                     connection->second->first.write( recieved_packet.body() );
                 }
                 return ResultType::Continue;
@@ -99,6 +100,11 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
         incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
                     data_buffer.emplace_back(incoming_socket.read());
+                    if ( data_buffer.back().size() == 0 ) {
+                        cerr << "ignoring empty payload tcp packet recieved at splitter client" << endl;
+                        data_buffer.pop_back();
+                        return ResultType::Continue;
+                    }
                     cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << endl;
 
                     KohoProtobufs::SplitTCPPacket toSend;
