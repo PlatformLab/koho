@@ -16,7 +16,7 @@ class TCP_Splitter_Server
 {
 private:
     AutoSocket splitter_client_socket_;
-    std::map<uint64_t, std::unique_ptr<std::pair<TCPSocket, std::vector<std::string>>>> connections_;
+    std::map<uint64_t, std::pair<TCPSocket, std::vector<std::string>>> connections_;
 
 public:
     TCP_Splitter_Server( );

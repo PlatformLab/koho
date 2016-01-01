@@ -27,7 +27,7 @@ public:
 
     TCPSocket & tcp_listener( void ) { return listener_socket_; }
 
-    void handle_new_tcp_connection( );
+    void handle_new_tcp_connection( void );
 
     int loop( void );
 

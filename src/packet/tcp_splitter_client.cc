@@ -35,8 +35,6 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
 
 int TCP_Splitter_Client::loop( void )
 {
-    splitter_server_socket_.write("initial packet from splitter client!");
-
     incoming_tcp_connections_.add_action( Poller::Action( listener_socket_, Direction::In, 
             [&] () {
             handle_new_tcp_connection( );
@@ -46,7 +44,22 @@ int TCP_Splitter_Client::loop( void )
     incoming_tcp_connections_.add_action( Poller::Action( splitter_server_socket_, Direction::In,
                 [&] () {
                 string buffer = splitter_server_socket_.read();
-                cerr << "DATA FROM SPLITTER SERVER: " << buffer << endl;
+
+                KohoProtobufs::SplitTCPPacket recieved_packet;
+                if (!recieved_packet.ParseFromString( buffer ) ) {
+                    cerr << "Failed to deserialize packet from splitter server, ignoring it." << endl;
+                    return ResultType::Continue;
+                }
+
+                cerr << "DATA FROM SPLITTER SERVER for uid " << recieved_packet.uid() << endl;
+                auto connection = connections_.find( recieved_packet.uid() );
+                if ( connection  == connections_.end() ) {
+                    cerr << "connection uid " << recieved_packet.uid() <<" does not exist on client, ignoring it." << endl;
+                    return ResultType::Continue;
+                } else {
+                    assert( recieved_packet.has_body() );
+                    connection->second->first.write( recieved_packet.body() );
+                }
                 return ResultType::Continue;
                 },
                 [&] () { return not splitter_server_socket_.eof(); } ) );
@@ -60,7 +73,7 @@ int TCP_Splitter_Client::loop( void )
     }
 }
 
-void TCP_Splitter_Client::handle_new_tcp_connection( )
+void TCP_Splitter_Client::handle_new_tcp_connection( void )
 {
     try {
         vector<string> empty;
@@ -73,7 +86,8 @@ void TCP_Splitter_Client::handle_new_tcp_connection( )
 
         KohoProtobufs::SplitTCPPacket connection_metadata;
         connection_metadata.set_uid( connection_uid );
-        connection_metadata.set_body( incoming_socket.original_dest().str() );
+        connection_metadata.set_address( incoming_socket.original_dest().ip() );
+        connection_metadata.set_port( incoming_socket.original_dest().port() );
         string serialized_metadata_proto;
         if ( !connection_metadata.SerializeToString( &serialized_metadata_proto ) ) {
             throw runtime_error( "TCP splitter client failed to serialize protobuf metadata." );
@@ -85,7 +99,7 @@ void TCP_Splitter_Client::handle_new_tcp_connection( )
         incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
                     data_buffer.emplace_back(incoming_socket.read());
-                    cerr << "TCP DATA FROM INSIDE CLIENT SHELL: " << data_buffer.back() << "For connection uid " << connection_uid << endl;
+                    cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << endl;
 
                     KohoProtobufs::SplitTCPPacket toSend;
                     toSend.set_uid( connection_uid );
