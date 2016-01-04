@@ -42,28 +42,26 @@ int TCP_Splitter_Client::loop( void )
             } ) );
 
     incoming_tcp_connections_.add_action( Poller::Action( splitter_server_socket_, Direction::In,
-                [&] () {
-                string buffer = splitter_server_socket_.read();
-
-                KohoProtobufs::SplitTCPPacket recieved_packet;
-                if (!recieved_packet.ParseFromString( buffer ) ) {
-                    cerr << "Failed to deserialize packet from splitter server, ignoring it." << endl;
-                    return ResultType::Continue;
-                }
-
-                cerr << "DATA FROM SPLITTER SERVER for uid " << recieved_packet.uid() << endl;
-                auto connection = connections_.find( recieved_packet.uid() );
-                if ( connection  == connections_.end() ) {
-                    cerr << "connection uid " << recieved_packet.uid() <<" does not exist on client, ignoring it." << endl;
-                    return ResultType::Continue;
-                } else {
-                    assert( recieved_packet.has_body() );
-                    assert( recieved_packet.body().size() > 0 );
-                    connection->second->first.write( recieved_packet.body() );
-                }
+            [&] () {
+            KohoProtobufs::SplitTCPPacket recieved_packet;
+            if ( !recieved_packet.ParseFromString( splitter_server_socket_.read() ) ) {
+                cerr << "Failed to deserialize packet from splitter server, ignoring it." << endl;
                 return ResultType::Continue;
-                },
-                [&] () { return not splitter_server_socket_.eof(); } ) );
+            }
+
+            cerr << "DATA FROM SPLITTER SERVER for uid " << recieved_packet.uid() << endl;
+            auto connection = connections_.find( recieved_packet.uid() );
+            if ( connection  == connections_.end() ) {
+                cerr << "connection uid " << recieved_packet.uid() <<" does not exist on client, ignoring it." << endl;
+                return ResultType::Continue;
+            } else {
+                assert( recieved_packet.has_body() );
+                assert( recieved_packet.body().size() > 0 );
+                connection->second->first.write( recieved_packet.body() );
+            }
+            return ResultType::Continue;
+            },
+            [&] () { return not splitter_server_socket_.eof(); } ) );
 
 
     while ( true ) {
