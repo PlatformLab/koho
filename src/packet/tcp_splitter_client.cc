@@ -60,10 +60,9 @@ int TCP_Splitter_Client::loop( void )
 void TCP_Splitter_Client::handle_new_tcp_connection( void )
 {
     try {
-        vector<string> empty;
-        unique_ptr<pair<TCPSocket, vector<string>>> to_ins( new pair<TCPSocket, vector<string>>(listener_socket_.accept(), empty));
-        TCPSocket & incoming_socket = to_ins->first;
-        const uint64_t connection_uid = connections_.insert( make_pair(get_connection_uid(), move(to_ins)) ).first->first;
+        auto entry = connections_.insert( make_pair(get_connection_uid(), listener_socket_.accept() ) ).first;
+        const uint64_t connection_uid = entry->first;
+        TCPSocket & incoming_socket = entry->second;
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         KohoProtobufs::SplitTCPPacket connection_metadata;
@@ -96,20 +95,18 @@ void TCP_Splitter_Client::receive_packet_from_client( uint64_t connection_uid )
         cerr << "connection uid " << connection_uid <<" does not exist on client, ignoring it." << endl;
         return;
     }
-    vector<string> & data_buffer = connection->second->second;
-    TCPSocket & incoming_socket = connection->second->first;
+    TCPSocket & incoming_socket = connection->second;
 
-    data_buffer.emplace_back(incoming_socket.read());
-    if ( data_buffer.back().size() == 0 ) {
-        cerr << "ignoring empty payload tcp packet received at splitter client" << endl;
-        data_buffer.pop_back();
-        return;
-    }
-    cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << endl;
 
     KohoProtobufs::SplitTCPPacket toSend;
     toSend.set_uid( connection_uid );
-    toSend.set_body( data_buffer.back() );
+    toSend.set_body( incoming_socket.read() );
+
+    if ( toSend.body().size() == 0 ) {
+        cerr << "ignoring empty payload tcp packet received at splitter client" << endl;
+        return;
+    }
+    cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << endl;
 
     string serialized_proto;
     if ( !toSend.SerializeToString( &serialized_proto ) ) {
@@ -135,6 +132,6 @@ void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     } else {
         assert( received_packet.has_body() );
         assert( received_packet.body().size() > 0 );
-        connection->second->first.write( received_packet.body() );
+        connection->second.write( received_packet.body() );
     }
 }
