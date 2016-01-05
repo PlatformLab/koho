@@ -7,6 +7,7 @@
 #include <map>
 
 #include "socket.hh"
+#include "poller.hh"
 #include "autosocket.hh"
 #include "split_tcp_packet.pb.h"
 
@@ -15,11 +16,15 @@ class Poller;
 class TCP_Splitter_Server
 {
 private:
+    Poller poller;
     AutoSocket splitter_client_socket_;
-    std::map<uint64_t, std::pair<TCPSocket, std::vector<std::string>>> connections_;
+    std::map<uint64_t, TCPSocket> connections_;
 
 public:
     TCP_Splitter_Server( );
+
+    void establish_new_tcp_connection( uint64_t, Address & );
+    //void receive_packet_from_splitter_client( void );
 
     Address local_address( void ) { return splitter_client_socket_.local_address( ); }
 

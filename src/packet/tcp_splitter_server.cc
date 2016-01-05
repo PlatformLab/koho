@@ -10,7 +10,6 @@
 #include "socket.hh"
 #include "system_runner.hh"
 #include "tcp_splitter_server.hh"
-#include "poller.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
 #include "event_loop.hh"
@@ -20,48 +19,48 @@ using namespace std;
 using namespace PollerShortNames;
 
 TCP_Splitter_Server::TCP_Splitter_Server( )
-    : splitter_client_socket_(),
+    : poller(),
+    splitter_client_socket_(),
     connections_()
 {
     splitter_client_socket_.bind( Address() );
 }
 
-inline void handle_new_tcp_connection( const uint64_t connection_uid, Poller &poller, std::pair<TCPSocket, std::vector<std::string>> &socket_buffer_pair, const Address & dest_addr, FileDescriptor & splitter_client_socket )
+void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr )
 {
-    TCPSocket & toConnect = socket_buffer_pair.first;
-    vector<string> & datagrams = socket_buffer_pair.second;
+    assert( connections_.count( connection_uid ) == 0 );
+    TCPSocket &newSocket = connections_[ connection_uid ];
 
-    poller.add_action( Poller::Action( toConnect, Direction::In,
+    poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    datagrams.emplace_back( toConnect.read() );
-                    if ( datagrams.back().size() == 0 ) {
+                    string recieved_bytes = newSocket.read();
+                    if ( recieved_bytes.size() == 0 ) {
                         cerr << "ignoring empty payload tcp packet recieved at splitter server" << endl;
-                        datagrams.pop_back();
                         return ResultType::Continue;
                     }
-                    cerr << "TCP DATA recieved at splitter server: " << datagrams.back() << "for connection uid " << connection_uid << endl;
+                    cerr << "TCP DATA recieved at splitter server: " << recieved_bytes << "for connection uid " << connection_uid << endl;
 
                     KohoProtobufs::SplitTCPPacket toSend;
                     toSend.set_uid( connection_uid );
-                    toSend.set_body( datagrams.back() );
+                    toSend.set_body( recieved_bytes );
 
                     string serialized_proto;
                     if ( !toSend.SerializeToString( &serialized_proto ) ) {
                         throw runtime_error( "TCP splitter server failed to serialize protobuf to send to client." );
                     }
 
+                    FileDescriptor &splitter_client_socket = splitter_client_socket_;
                     splitter_client_socket.write( serialized_proto );
                     return ResultType::Continue;
                 },
-                [&] () { return not toConnect.eof(); } ) );
+                [&] () { return not newSocket.eof(); } ) );
 
-    toConnect.connect( dest_addr );
+    newSocket.connect( dest_addr );
 }
 
 int TCP_Splitter_Server::loop( void )
 {
     FileDescriptor & splitter_client_socket = splitter_client_socket_;
-    Poller poller;
     
     poller.add_action( Poller::Action( splitter_client_socket, Direction::In,
                 [&] () {
@@ -79,15 +78,14 @@ int TCP_Splitter_Server::loop( void )
                     assert( recieved_packet.has_address() );
                     assert( recieved_packet.has_port() );
 
-                    auto &toConnect = connections_[ recieved_packet.uid() ];
                     Address dest_addr( recieved_packet.address(), recieved_packet.port() );
-                    handle_new_tcp_connection( recieved_packet.uid(), poller, toConnect, dest_addr, splitter_client_socket_ );
+                    establish_new_tcp_connection( recieved_packet.uid(), dest_addr );
                 } else {
                     assert( recieved_packet.has_body() );
                     assert( recieved_packet.body().size() > 0 );
 
                     cerr << "forwarding packet with body " << recieved_packet.body() << " to established connection" << endl;
-                    connection->second.first.write( recieved_packet.body() );
+                    connection->second.write( recieved_packet.body() );
                 }
 
                 return ResultType::Continue;
