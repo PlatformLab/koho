@@ -28,7 +28,6 @@ public:
     TCPSocket & tcp_listener( void ) { return listener_socket_; }
 
     void handle_new_tcp_connection( void );
-    void receive_packet_from_client( uint64_t connection_uid );
     void receive_packet_from_splitter_server( void );
 
     int loop( void );

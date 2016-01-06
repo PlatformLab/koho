@@ -4,7 +4,8 @@ package KohoProtobufs;
 
 message SplitTCPPacket {
     required uint64 uid = 1;
-    optional bytes body = 2;
-    optional string address = 3;
-    optional uint32 port = 4;
+    required bool eof = 2;
+    optional bytes body = 3;
+    optional string address = 4;
+    optional uint32 port = 5;
 }

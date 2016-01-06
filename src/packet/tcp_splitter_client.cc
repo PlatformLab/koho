@@ -9,14 +9,13 @@
 #include "address.hh"
 #include "socket.hh"
 #include "system_runner.hh"
+#include "tcp_splitter_common.hh"
 #include "tcp_splitter_client.hh"
 #include "poller.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
 #include "event_loop.hh"
 #include "exception.hh"
-
-#include "split_tcp_packet.pb.h"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -79,41 +78,13 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
         /* add poller routine so incoming datagrams on this socket go to splitter server */
         incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
-                    receive_packet_from_client( connection_uid );
+                    receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_server_socket_ );
                     return ResultType::Continue;
                     },
                     [&] () { return not incoming_socket.eof(); } ) );
     } catch ( const exception & e ) {
         print_exception( e );
     }
-}
-
-void TCP_Splitter_Client::receive_packet_from_client( uint64_t connection_uid )
-{
-    auto connection = connections_.find( connection_uid );
-    if ( connection  == connections_.end() ) {
-        cerr << "connection uid " << connection_uid <<" does not exist on client, ignoring it." << endl;
-        return;
-    }
-    TCPSocket & incoming_socket = connection->second;
-
-
-    KohoProtobufs::SplitTCPPacket toSend;
-    toSend.set_uid( connection_uid );
-    toSend.set_body( incoming_socket.read() );
-
-    if ( toSend.body().size() == 0 ) {
-        cerr << "ignoring empty payload tcp packet received at splitter client" << endl;
-        return;
-    }
-    cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << endl;
-
-    string serialized_proto;
-    if ( !toSend.SerializeToString( &serialized_proto ) ) {
-        throw runtime_error( "TCP splitter client failed to serialize protobuf." );
-    }
-
-    splitter_server_socket_.write( serialized_proto );
 }
 
 void TCP_Splitter_Client::receive_packet_from_splitter_server( void )

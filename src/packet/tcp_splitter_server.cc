@@ -9,6 +9,7 @@
 #include "address.hh"
 #include "socket.hh"
 #include "system_runner.hh"
+#include "tcp_splitter_common.hh"
 #include "tcp_splitter_server.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
@@ -26,31 +27,6 @@ TCP_Splitter_Server::TCP_Splitter_Server( )
     splitter_client_socket_.bind( Address() );
 }
 
-void TCP_Splitter_Server::receive_bytes_from_split_tcp_connection( uint64_t connection_uid )
-{
-    assert( connections_.count( connection_uid ) == 1 );
-    TCPSocket &incomingSocket = connections_[ connection_uid ];
-
-    string recieved_bytes = incomingSocket.read();
-    if ( recieved_bytes.size() == 0 ) {
-        cerr << "ignoring empty payload tcp packet recieved at splitter server" << endl;
-        return;
-    }
-    cerr << "TCP DATA recieved at splitter server: " << recieved_bytes << "for connection uid " << connection_uid << endl;
-
-    KohoProtobufs::SplitTCPPacket toSend;
-    toSend.set_uid( connection_uid );
-    toSend.set_body( recieved_bytes );
-
-    string serialized_proto;
-    if ( !toSend.SerializeToString( &serialized_proto ) ) {
-        throw runtime_error( "TCP splitter server failed to serialize protobuf to send to client." );
-    }
-
-    FileDescriptor &splitter_client_socket = splitter_client_socket_;
-    splitter_client_socket.write( serialized_proto );
-}
-
 void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr )
 {
     assert( connections_.count( connection_uid ) == 0 );
@@ -58,7 +34,7 @@ void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid,
 
     poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    receive_bytes_from_split_tcp_connection( connection_uid );
+                    receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_client_socket_ );
                     return ResultType::Continue;
                 },
                 [&] () { return not newSocket.eof(); } ) );
@@ -73,7 +49,6 @@ int TCP_Splitter_Server::loop( void )
     poller.add_action( Poller::Action( splitter_client_socket, Direction::In,
                 [&] () {
                 const string buffer = splitter_client_socket.read();
-                
 
                 KohoProtobufs::SplitTCPPacket recieved_packet;
                 if (!recieved_packet.ParseFromString( buffer ) ) {
