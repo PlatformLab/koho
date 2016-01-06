@@ -26,7 +26,7 @@ TCP_Splitter_Server::TCP_Splitter_Server( )
     splitter_client_socket_.bind( Address() );
 }
 
-void TCP_Splitter_Server::receive_tcp_bytes_from_split_connection( uint64_t connection_uid )
+void TCP_Splitter_Server::receive_bytes_from_split_tcp_connection( uint64_t connection_uid )
 {
     assert( connections_.count( connection_uid ) == 1 );
     TCPSocket &incomingSocket = connections_[ connection_uid ];
@@ -58,7 +58,7 @@ void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid,
 
     poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    receive_tcp_bytes_from_split_connection( connection_uid );
+                    receive_bytes_from_split_tcp_connection( connection_uid );
                     return ResultType::Continue;
                 },
                 [&] () { return not newSocket.eof(); } ) );

@@ -24,7 +24,7 @@ public:
     TCP_Splitter_Server( );
 
     void establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr );
-    void receive_tcp_bytes_from_split_connection( uint64_t connection_uid );
+    void receive_bytes_from_split_tcp_connection( uint64_t connection_uid );
 
     Address local_address( void ) { return splitter_client_socket_.local_address( ); }
 
