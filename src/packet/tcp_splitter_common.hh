@@ -11,7 +11,7 @@
 #include "split_tcp_connection.hh"
 #include "split_tcp_packet.pb.h"
 
-void receive_bytes_from_split_tcp_connection( std::map<uint64_t, split_tcp_connection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
+void receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
     auto connection_iter = connection_map.find( connection_uid );
     if ( connection_iter  == connection_map.end() ) {
@@ -40,7 +40,7 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, split_tcp_conne
     other_side_socket.write( serialized_proto ); // TODO rename other side?
 }
 
-bool if_done_plus_erase_on_completion( std::map<uint64_t, split_tcp_connection> &connection_map, const uint64_t connection_uid )
+bool if_done_plus_erase_on_completion( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid )
 {
     auto connection_iter = connection_map.find( connection_uid );
     assert( connection_iter != connection_map.end() );

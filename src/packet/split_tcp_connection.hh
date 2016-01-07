@@ -7,14 +7,14 @@
 #include <map>
 
 #include "socket.hh"
-struct split_tcp_connection
+struct SplitTCPConnection
 {
     TCPSocket socket;
     bool shutdown = false;
 
-    split_tcp_connection( TCPSocket && socket_s ) : socket( std::forward<TCPSocket>(socket_s)) { };
+    SplitTCPConnection( TCPSocket && socket_s ) : socket( std::forward<TCPSocket>(socket_s)) { };
 
-    split_tcp_connection() : socket( ) { };
+    SplitTCPConnection() : socket( ) { };
 };
 
 #endif /* SPLIT_TCP_CONNECTION_HH */

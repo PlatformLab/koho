@@ -21,7 +21,7 @@ private:
     UDPSocket splitter_server_socket_;
     Poller incoming_tcp_connections_;
     uint64_t next_connection_uid_ = 1;
-    std::map<uint64_t, split_tcp_connection> connections_;
+    std::map<uint64_t, SplitTCPConnection> connections_;
 
 public:
     TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr );
