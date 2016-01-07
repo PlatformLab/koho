@@ -68,7 +68,6 @@ int TCP_Splitter_Server::loop( void )
                 } else {
                     if ( received_packet.eof() ) {
                         connection->second.second = true;
-                        return ResultType::Continue;
                     } else {
                         assert( received_packet.has_body() );
                         assert( received_packet.body().size() > 0 );
