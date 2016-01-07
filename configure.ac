@@ -82,6 +82,7 @@ AC_CHECK_FUNCS([clock_gettime inet_ntoa memset mkdir setenv socket strerror strt
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 src/util/Makefile
+		 src/tcp_splitter/Makefile
 		 src/packet/Makefile
 		 src/frontend/Makefile
 		 src/protobuf/Makefile])
