@@ -67,7 +67,7 @@ int TCP_Splitter_Server::loop( void )
                     establish_new_tcp_connection( received_packet.uid(), dest_addr );
                 } else {
                     if ( received_packet.eof() ) {
-                        connection->second.second = true;
+                        connection->second.second = true; // splitter client recieved eof so done with this connection
                     } else {
                         assert( received_packet.has_body() );
                         assert( received_packet.body().size() > 0 );

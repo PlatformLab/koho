@@ -105,7 +105,7 @@ void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     } else {
         if ( received_packet.eof() ) {
             cerr <<" got EOF" << endl;
-            connection->second.second = true;
+            connection->second.second = true; // splitter server recieved eof so done with this connection
         } else {
             assert( received_packet.has_body() );
             assert( received_packet.body().size() > 0 );

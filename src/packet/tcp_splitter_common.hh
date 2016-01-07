@@ -26,7 +26,7 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, std::pair<TCPSo
     if ( toSend.body().size() == 0 ) {
         toSend.set_eof( true );
         toSend.clear_body();
-        std::cerr << "GOT EOF" << std::endl;
+        connection->second.second = true; // eof from other side of tcp connection means we are done
     } else {
         toSend.set_eof( false );
     }

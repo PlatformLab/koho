@@ -46,8 +46,8 @@ public:
     };
 
 private:
-    std::list< Action > actions_;
-    std::vector< pollfd > pollfds_;
+    std::list< Action > actions_; /* List instead of vector so we can remove non MoveAssignable Actions */
+    std::vector< pollfd > pollfds_; /* contiguous entries required for poll.h system call */
 
 public:
     struct Result
