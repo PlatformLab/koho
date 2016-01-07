@@ -7,4 +7,4 @@ libpacket_a_SOURCES = bindworkaround.hh tunnelclient.hh tunnelclient.cc \
 		      tunnelserver.hh tunnelserver.cc \
               tcp_splitter_client.hh tcp_splitter_client.cc \
               tcp_splitter_server.hh tcp_splitter_server.cc \
-              tcp_splitter_common.hh
+              tcp_splitter_common.hh split_tcp_connection.hh

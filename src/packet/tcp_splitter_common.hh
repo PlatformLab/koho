@@ -8,16 +8,17 @@
 
 #include "socket.hh"
 #include "file_descriptor.hh"
+#include "split_tcp_connection.hh"
 #include "split_tcp_packet.pb.h"
 
-void receive_bytes_from_split_tcp_connection( std::map<uint64_t, std::pair<TCPSocket, bool>> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
+void receive_bytes_from_split_tcp_connection( std::map<uint64_t, split_tcp_connection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
-    auto connection = connection_map.find( connection_uid );
-    if ( connection  == connection_map.end() ) {
+    auto connection_iter = connection_map.find( connection_uid );
+    if ( connection_iter  == connection_map.end() ) {
         std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
         return;
     }
-    TCPSocket & incoming_socket = connection->second.first;
+    TCPSocket & incoming_socket = connection_iter->second.socket;
 
     KohoProtobufs::SplitTCPPacket toSend;
     toSend.set_uid( connection_uid );
@@ -26,7 +27,7 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, std::pair<TCPSo
     if ( toSend.body().size() == 0 ) {
         toSend.set_eof( true );
         toSend.clear_body();
-        connection->second.second = true; // eof from other side of tcp connection means we are done
+        connection_iter->second.shutdown = true; // eof from other side of tcp connection means we are done
     } else {
         toSend.set_eof( false );
     }
@@ -36,14 +37,14 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, std::pair<TCPSo
         throw std::runtime_error( "TCP splitter failed to serialize protobuf." );
     }
 
-    other_side_socket.write( serialized_proto );
+    other_side_socket.write( serialized_proto ); // TODO rename other side?
 }
 
-bool if_done_plus_erase_on_completion( std::map<uint64_t, std::pair<TCPSocket, bool>> &connection_map, const uint64_t connection_uid )
+bool if_done_plus_erase_on_completion( std::map<uint64_t, split_tcp_connection> &connection_map, const uint64_t connection_uid )
 {
-    auto connection_map_iter = connection_map.find( connection_uid );
-    assert( connection_map_iter != connection_map.end() );
-    if ( connection_map_iter->second.second ) {
+    auto connection_iter = connection_map.find( connection_uid );
+    assert( connection_iter != connection_map.end() );
+    if ( connection_iter->second.shutdown ) {
         int erased = connection_map.erase( connection_uid );
         assert( erased == 1 );
         std::cerr <<"Closing connection on EOF" << std::endl;

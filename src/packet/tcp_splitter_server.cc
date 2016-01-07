@@ -30,8 +30,7 @@ TCP_Splitter_Server::TCP_Splitter_Server( )
 void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr )
 {
     assert( connections_.count( connection_uid ) == 0 );
-    TCPSocket &newSocket = connections_[ connection_uid ].first;
-    connections_[ connection_uid ].second = false;
+    TCPSocket &newSocket = connections_[ connection_uid ].socket;
 
     poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
@@ -58,8 +57,8 @@ int TCP_Splitter_Server::loop( void )
                     return ResultType::Continue;
                 }
                 cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid() << " and has body " << received_packet.has_body() << endl;
-                auto connection = connections_.find( received_packet.uid() );
-                if ( connection  == connections_.end() ) {
+                auto connection_iter = connections_.find( received_packet.uid() );
+                if ( connection_iter  == connections_.end() ) {
                     assert( received_packet.has_address() );
                     assert( received_packet.has_port() );
 
@@ -67,13 +66,13 @@ int TCP_Splitter_Server::loop( void )
                     establish_new_tcp_connection( received_packet.uid(), dest_addr );
                 } else {
                     if ( received_packet.eof() ) {
-                        connection->second.second = true; // splitter client recieved eof so done with this connection
+                        connection_iter->second.shutdown = true; // splitter client recieved eof so done with this connection
                     } else {
                         assert( received_packet.has_body() );
                         assert( received_packet.body().size() > 0 );
 
                         cerr << "forwarding packet with body " << received_packet.body() << " to established connection" << endl;
-                        connection->second.first.write( received_packet.body() );
+                        connection_iter->second.socket.write( received_packet.body() );
                     }
                 }
 

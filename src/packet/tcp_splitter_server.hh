@@ -9,6 +9,7 @@
 #include "socket.hh"
 #include "poller.hh"
 #include "autosocket.hh"
+#include "split_tcp_connection.hh"
 #include "split_tcp_packet.pb.h"
 
 class Poller;
@@ -18,7 +19,7 @@ class TCP_Splitter_Server
 private:
     Poller poller;
     AutoSocket splitter_client_socket_;
-    std::map<uint64_t, std::pair<TCPSocket, bool>> connections_; // bool if eof
+    std::map<uint64_t, split_tcp_connection> connections_; // bool if eof
 
 public:
     TCP_Splitter_Server( );

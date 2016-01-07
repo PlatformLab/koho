@@ -59,9 +59,9 @@ int TCP_Splitter_Client::loop( void )
 void TCP_Splitter_Client::handle_new_tcp_connection( void )
 {
     try {
-        auto entry = connections_.insert( make_pair(get_connection_uid(), make_pair(listener_socket_.accept(), false ) ) ).first;
-        const uint64_t connection_uid = entry->first;
-        TCPSocket & incoming_socket = entry->second.first;
+        auto connection_iter = connections_.emplace( make_pair(get_connection_uid(), listener_socket_.accept() )).first;
+        const uint64_t connection_uid = connection_iter->first;
+        TCPSocket & incoming_socket = connection_iter->second.socket;
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         KohoProtobufs::SplitTCPPacket connection_metadata;
@@ -98,18 +98,18 @@ void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     }
 
     cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.uid() << endl;
-    auto connection = connections_.find( received_packet.uid() );
-    if ( connection  == connections_.end() ) {
+    auto connection_iter = connections_.find( received_packet.uid() );
+    if ( connection_iter  == connections_.end() ) {
         cerr << "connection uid " << received_packet.uid() <<" does not exist on client, ignoring it." << endl;
         return;
     } else {
         if ( received_packet.eof() ) {
             cerr <<" got EOF" << endl;
-            connection->second.second = true; // splitter server recieved eof so done with this connection
+            connection_iter->second.shutdown = true; // splitter server recieved eof so done with this connection
         } else {
             assert( received_packet.has_body() );
             assert( received_packet.body().size() > 0 );
-            connection->second.first.write( received_packet.body() );
+            connection_iter->second.socket.write( received_packet.body() );
         }
     }
 }
