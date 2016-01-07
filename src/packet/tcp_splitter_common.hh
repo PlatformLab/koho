@@ -45,7 +45,8 @@ bool if_done_plus_erase_on_completion( std::map<uint64_t, std::pair<TCPSocket, b
     assert( connection_map_iter != connection_map.end() );
     if ( connection_map_iter->second.second ) {
         int erased = connection_map.erase( connection_uid );
-        std::cerr <<" ON recieved EOF with erased = " << ( erased == 1 ) << std::endl;
+        assert( erased == 1 );
+        std::cerr <<"Closing connection on EOF" << std::endl;
         return true;
     }
     return false;

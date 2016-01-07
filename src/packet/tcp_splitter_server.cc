@@ -78,8 +78,7 @@ int TCP_Splitter_Server::loop( void )
                 }
 
                 return ResultType::Continue;
-                }/*,
-                [&] () { return not splitter_client_socket.eof(); } */) );
+                } ) );
 
     while ( true ) {
         if ( poller.poll( -1 ).result == Poller::Result::Type::Exit ) {
