@@ -59,9 +59,9 @@ int TCP_Splitter_Client::loop( void )
 void TCP_Splitter_Client::handle_new_tcp_connection( void )
 {
     try {
-        auto entry = connections_.insert( make_pair(get_connection_uid(), listener_socket_.accept() ) ).first;
+        auto entry = connections_.insert( make_pair(get_connection_uid(), make_pair(listener_socket_.accept(), false ) ) ).first;
         const uint64_t connection_uid = entry->first;
-        TCPSocket & incoming_socket = entry->second;
+        TCPSocket & incoming_socket = entry->second.first;
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         KohoProtobufs::SplitTCPPacket connection_metadata;
@@ -82,7 +82,8 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
                     receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_server_socket_ );
                     return ResultType::Continue;
                     },
-                    [&] () { return not incoming_socket.eof(); } ) );
+                    [&] () { return not incoming_socket.eof(); },
+                    [&, connection_uid] () { return if_done_plus_erase_on_completion( connections_, connection_uid ); } ) );
     } catch ( const exception & e ) {
         print_exception( e );
     }
@@ -104,14 +105,11 @@ void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     } else {
         if ( received_packet.eof() ) {
             cerr <<" got EOF" << endl;
-            //connection->second.close();
-            //size_t num_erased = connections_.erase( received_packet.uid() );
-            //cerr << "client erased " << num_erased << " connection" << endl;
-            return;
+            connection->second.second = true;
         } else {
             assert( received_packet.has_body() );
             assert( received_packet.body().size() > 0 );
-            connection->second.write( received_packet.body() );
+            connection->second.first.write( received_packet.body() );
         }
     }
 }

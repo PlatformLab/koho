@@ -10,27 +10,26 @@
 #include "file_descriptor.hh"
 #include "split_tcp_packet.pb.h"
 
-void receive_bytes_from_split_tcp_connection( std::map<uint64_t, TCPSocket> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
+void receive_bytes_from_split_tcp_connection( std::map<uint64_t, std::pair<TCPSocket, bool>> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
     auto connection = connection_map.find( connection_uid );
     if ( connection  == connection_map.end() ) {
         std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
         return;
     }
-    TCPSocket & incoming_socket = connection->second;
+    TCPSocket & incoming_socket = connection->second.first;
 
     KohoProtobufs::SplitTCPPacket toSend;
     toSend.set_uid( connection_uid );
+    toSend.set_body( incoming_socket.read() );
 
     if ( toSend.body().size() == 0 ) {
         toSend.set_eof( true );
+        toSend.clear_body();
         std::cerr << "GOT EOF" << std::endl;
     } else {
         toSend.set_eof( false );
-        toSend.set_body( incoming_socket.read() );
     }
-
-    //std::cerr << "TCP DATA FROM INSIDE CLIENT SHELL for connection uid " << connection_uid << std::endl;
 
     std::string serialized_proto;
     if ( !toSend.SerializeToString( &serialized_proto ) ) {
@@ -39,5 +38,18 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, TCPSocket> &con
 
     other_side_socket.write( serialized_proto );
 }
+
+bool if_done_plus_erase_on_completion( std::map<uint64_t, std::pair<TCPSocket, bool>> &connection_map, const uint64_t connection_uid )
+{
+    auto connection_map_iter = connection_map.find( connection_uid );
+    assert( connection_map_iter != connection_map.end() );
+    if ( connection_map_iter->second.second ) {
+        int erased = connection_map.erase( connection_uid );
+        std::cerr <<" ON recieved EOF with erased = " << ( erased == 1 ) << std::endl;
+        return true;
+    }
+    return false;
+}
+
 
 #endif /* TCP_SPLITTER_COMMON_HH */

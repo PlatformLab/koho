@@ -18,7 +18,7 @@ class TCP_Splitter_Server
 private:
     Poller poller;
     AutoSocket splitter_client_socket_;
-    std::map<uint64_t, TCPSocket> connections_;
+    std::map<uint64_t, std::pair<TCPSocket, bool>> connections_; // bool if eof
 
 public:
     TCP_Splitter_Server( );

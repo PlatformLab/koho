@@ -30,14 +30,16 @@ TCP_Splitter_Server::TCP_Splitter_Server( )
 void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr )
 {
     assert( connections_.count( connection_uid ) == 0 );
-    TCPSocket &newSocket = connections_[ connection_uid ];
+    TCPSocket &newSocket = connections_[ connection_uid ].first;
+    connections_[ connection_uid ].second = false;
 
     poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
                     receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_client_socket_ );
                     return ResultType::Continue;
                 },
-                [&] () { return not newSocket.eof(); } ) );
+                [&] () { return not newSocket.eof(); },
+                [&, connection_uid] () { return if_done_plus_erase_on_completion( connections_, connection_uid ); } ) );
 
     newSocket.connect( dest_addr );
 }
@@ -65,17 +67,14 @@ int TCP_Splitter_Server::loop( void )
                     establish_new_tcp_connection( received_packet.uid(), dest_addr );
                 } else {
                     if ( received_packet.eof() ) {
-                        cerr <<" EXITING ON recieved EOF" << endl;
-                        //connection->second.close();
-                        //size_t num_erased = connections_.erase( received_packet.uid() );
-                        //cerr << "server erased " << num_erased << " connection" << endl;
-                        return ResultType::Exit;
+                        connection->second.second = true;
+                        return ResultType::Continue;
                     } else {
                         assert( received_packet.has_body() );
                         assert( received_packet.body().size() > 0 );
 
                         cerr << "forwarding packet with body " << received_packet.body() << " to established connection" << endl;
-                        connection->second.write( received_packet.body() );
+                        connection->second.first.write( received_packet.body() );
                     }
                 }
 
