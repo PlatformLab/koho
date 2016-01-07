@@ -50,25 +50,33 @@ int TCP_Splitter_Server::loop( void )
                 [&] () {
                 const string buffer = splitter_client_socket.read();
 
-                KohoProtobufs::SplitTCPPacket recieved_packet;
-                if (!recieved_packet.ParseFromString( buffer ) ) {
+                KohoProtobufs::SplitTCPPacket received_packet;
+                if (!received_packet.ParseFromString( buffer ) ) {
                     cerr << "Failed to deserialize packet from splitter client, ignoring it." << endl;
                     return ResultType::Continue;
                 }
-                cerr << "DATA FROM SPLITTER CLIENT uid " << recieved_packet.uid() << " and has body " << recieved_packet.has_body() << endl;
-                auto connection = connections_.find( recieved_packet.uid() );
+                cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid() << " and has body " << received_packet.has_body() << endl;
+                auto connection = connections_.find( received_packet.uid() );
                 if ( connection  == connections_.end() ) {
-                    assert( recieved_packet.has_address() );
-                    assert( recieved_packet.has_port() );
+                    assert( received_packet.has_address() );
+                    assert( received_packet.has_port() );
 
-                    Address dest_addr( recieved_packet.address(), recieved_packet.port() );
-                    establish_new_tcp_connection( recieved_packet.uid(), dest_addr );
+                    Address dest_addr( received_packet.address(), received_packet.port() );
+                    establish_new_tcp_connection( received_packet.uid(), dest_addr );
                 } else {
-                    assert( recieved_packet.has_body() );
-                    assert( recieved_packet.body().size() > 0 );
+                    if ( received_packet.eof() ) {
+                        cerr <<" EXITING ON recieved EOF" << endl;
+                        //connection->second.close();
+                        //size_t num_erased = connections_.erase( received_packet.uid() );
+                        //cerr << "server erased " << num_erased << " connection" << endl;
+                        return ResultType::Exit;
+                    } else {
+                        assert( received_packet.has_body() );
+                        assert( received_packet.body().size() > 0 );
 
-                    cerr << "forwarding packet with body " << recieved_packet.body() << " to established connection" << endl;
-                    connection->second.write( recieved_packet.body() );
+                        cerr << "forwarding packet with body " << received_packet.body() << " to established connection" << endl;
+                        connection->second.write( received_packet.body() );
+                    }
                 }
 
                 return ResultType::Continue;

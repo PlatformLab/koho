@@ -66,6 +66,7 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         KohoProtobufs::SplitTCPPacket connection_metadata;
         connection_metadata.set_uid( connection_uid );
+        connection_metadata.set_eof( false );
         connection_metadata.set_address( incoming_socket.original_dest().ip() );
         connection_metadata.set_port( incoming_socket.original_dest().port() );
         string serialized_metadata_proto;
@@ -101,8 +102,16 @@ void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
         cerr << "connection uid " << received_packet.uid() <<" does not exist on client, ignoring it." << endl;
         return;
     } else {
-        assert( received_packet.has_body() );
-        assert( received_packet.body().size() > 0 );
-        connection->second.write( received_packet.body() );
+        if ( received_packet.eof() ) {
+            cerr <<" got EOF" << endl;
+            //connection->second.close();
+            //size_t num_erased = connections_.erase( received_packet.uid() );
+            //cerr << "client erased " << num_erased << " connection" << endl;
+            return;
+        } else {
+            assert( received_packet.has_body() );
+            assert( received_packet.body().size() > 0 );
+            connection->second.write( received_packet.body() );
+        }
     }
 }
