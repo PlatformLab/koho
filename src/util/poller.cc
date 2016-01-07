@@ -30,6 +30,7 @@ Poller::Result Poller::poll( const int & timeout_ms )
         if ( action_it->when_remove() ) {
             action_it = actions_.erase( action_it );
             pollfd_it = pollfds_.erase( pollfd_it );
+            assert( pollfds_.size() == actions_.size() );
         } else {
             action_it++;
             pollfd_it++;
@@ -38,15 +39,15 @@ Poller::Result Poller::poll( const int & timeout_ms )
 
     /* tell poll whether we care about each fd */
     action_it = actions_.begin();
-    for ( unsigned int i = 0; i < pollfds_.size(); i++, action_it++ ) {
-        assert( pollfds_.at( i ).fd == action_it->fd.fd_num() );
-        pollfds_.at( i ).events = (action_it->active and action_it->when_interested())
+    pollfd_it = pollfds_.begin();
+    for ( ; action_it != actions_.end() and pollfd_it != pollfds_.end(); action_it++, pollfd_it++ ) {
+        assert( pollfd_it->fd == action_it->fd.fd_num() );
+        pollfd_it->events = ( action_it->active and action_it->when_interested() )
             ? action_it->direction : 0;
 
         /* don't poll in on fds that have had EOF */
-        if ( action_it->direction == Direction::In
-             and action_it->fd.eof() ) {
-            pollfds_.at( i ).events = 0;
+        if ( action_it->direction == Direction::In and action_it->fd.eof() ) {
+            pollfd_it->events = 0;
         }
     }
 
@@ -61,13 +62,14 @@ Poller::Result Poller::poll( const int & timeout_ms )
     }
 
     action_it = actions_.begin();
-    for ( unsigned int i = 0; i < pollfds_.size(); i++, action_it++ ) {
-        if ( pollfds_[ i ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
+    pollfd_it = pollfds_.begin();
+    for ( ; action_it != actions_.end() and pollfd_it != pollfds_.end(); action_it++, pollfd_it++ ) {
+        if ( pollfd_it->revents & (POLLERR | POLLHUP | POLLNVAL) ) {
             //            throw Exception( "poll fd error" );
             return Result::Type::Exit;
         }
 
-        if ( pollfds_[ i ].revents & pollfds_[ i ].events ) {
+        if ( pollfd_it->revents & pollfd_it->events ) {
             /* we only want to call callback if revents includes
                the event we asked for */
             const auto count_before = action_it->service_count();
