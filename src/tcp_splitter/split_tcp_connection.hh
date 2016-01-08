@@ -10,7 +10,6 @@
 struct SplitTCPConnection
 {
     TCPSocket socket;
-    bool shutdown = false;
 
     SplitTCPConnection( TCPSocket && socket_s ) : socket( std::forward<TCPSocket>(socket_s)) { };
 

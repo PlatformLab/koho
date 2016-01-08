@@ -42,8 +42,7 @@ int TCP_Splitter_Client::loop( void )
 
     incoming_tcp_connections_.add_action( Poller::Action( splitter_server_socket_, Direction::In,
             [&] () {
-            receive_packet_from_splitter_server();
-            return ResultType::Continue;
+            return receive_packet_from_splitter_server();
             },
             [&] () { return not splitter_server_socket_.eof(); } ) );
 
@@ -86,27 +85,30 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
     }
 }
 
-void TCP_Splitter_Client::receive_packet_from_splitter_server( void )
+Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
 {
     KohoProtobufs::SplitTCPPacket received_packet;
     if ( !received_packet.ParseFromString( splitter_server_socket_.read() ) ) {
         cerr << "Failed to deserialize packet from splitter server, ignoring it." << endl;
-        return;
+        return ResultType::Continue;
     }
 
     cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.uid() << endl;
     auto connection_iter = connections_.find( received_packet.uid() );
     if ( connection_iter  == connections_.end() ) {
         cerr << "connection uid " << received_packet.uid() <<" does not exist on client, ignoring it." << endl;
-        return;
     } else {
         if ( received_packet.eof() ) {
             cerr <<" got EOF" << endl;
-            connection_iter->second.shutdown = true; // splitter server recieved eof so done with this connection
+            // splitter server received eof so done with this connection
+            int erased = connections_.erase( received_packet.uid() );
+            assert( erased == 1 );
+            return ResultType::Cancel;
         } else {
             assert( received_packet.has_body() );
             assert( received_packet.body().size() > 0 );
             connection_iter->second.socket.write( received_packet.body() );
         }
     }
+    return ResultType::Continue;
 }

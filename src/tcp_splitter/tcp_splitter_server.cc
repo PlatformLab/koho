@@ -63,7 +63,9 @@ int TCP_Splitter_Server::loop( void )
                     establish_new_tcp_connection( received_packet.uid(), dest_addr );
                 } else {
                     if ( received_packet.eof() ) {
-                        connection_iter->second.shutdown = true; // splitter client recieved eof so done with this connection
+                        int erased = connections_.erase( received_packet.uid() );
+                        assert( erased == 1 );
+                        return ResultType::Cancel; // splitter client recieved eof so done with this connection
                     } else {
                         assert( received_packet.has_body() );
                         assert( received_packet.body().size() > 0 );

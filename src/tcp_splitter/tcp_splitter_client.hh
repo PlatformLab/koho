@@ -12,7 +12,7 @@
 #include "poller.hh"
 
 class EventLoop;
-//class Poller;
+using namespace PollerShortNames;
 
 class TCP_Splitter_Client
 {
@@ -29,7 +29,7 @@ public:
     TCPSocket & tcp_listener( void ) { return listener_socket_; }
 
     void handle_new_tcp_connection( void );
-    void receive_packet_from_splitter_server( void );
+    Result receive_packet_from_splitter_server( void );
 
     int loop( void );
 
