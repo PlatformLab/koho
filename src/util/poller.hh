@@ -31,16 +31,13 @@ public:
         enum PollDirection : short { In = POLLIN, Out = POLLOUT } direction;
         CallbackType callback;
         std::function<bool(void)> when_interested;
-        std::function<bool(void)> when_remove;
-        bool active;
 
         Action( FileDescriptor & s_fd,
                 const PollDirection & s_direction,
                 const CallbackType & s_callback,
-                const std::function<bool(void)> & s_when_interested = [] () { return true; },
-                const std::function<bool(void)> & s_when_remove = [] () { return false; } )
+                const std::function<bool(void)> & s_when_interested = [] () { return true; } )
             : fd( s_fd ), direction( s_direction ), callback( s_callback ),
-              when_interested( s_when_interested ), when_remove( s_when_remove ), active( true ) {}
+              when_interested( s_when_interested ) {}
 
         unsigned int service_count( void ) const;
     };

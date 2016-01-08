@@ -22,28 +22,12 @@ Poller::Result Poller::poll( const int & timeout_ms )
 {
     assert( pollfds_.size() == actions_.size() );
 
-    /* remove finished actions */
+    /* tell poll whether we care about each fd */
     auto action_it = actions_.begin();
     auto pollfd_it = pollfds_.begin();
-    while ( action_it != actions_.end() and pollfd_it != pollfds_.end() ) {
-        assert( pollfd_it->fd == action_it->fd.fd_num() );
-        if ( action_it->when_remove() ) {
-            action_it = actions_.erase( action_it );
-            pollfd_it = pollfds_.erase( pollfd_it );
-            assert( pollfds_.size() == actions_.size() );
-        } else {
-            action_it++;
-            pollfd_it++;
-        }
-    }
-
-    /* tell poll whether we care about each fd */
-    action_it = actions_.begin();
-    pollfd_it = pollfds_.begin();
     for ( ; action_it != actions_.end() and pollfd_it != pollfds_.end(); action_it++, pollfd_it++ ) {
         assert( pollfd_it->fd == action_it->fd.fd_num() );
-        pollfd_it->events = ( action_it->active and action_it->when_interested() )
-            ? action_it->direction : 0;
+        pollfd_it->events = action_it->when_interested() ? action_it->direction : 0;
 
         /* don't poll in on fds that have had EOF */
         if ( action_it->direction == Direction::In and action_it->fd.eof() ) {
@@ -63,7 +47,7 @@ Poller::Result Poller::poll( const int & timeout_ms )
 
     action_it = actions_.begin();
     pollfd_it = pollfds_.begin();
-    for ( ; action_it != actions_.end() and pollfd_it != pollfds_.end(); action_it++, pollfd_it++ ) {
+    while ( action_it != actions_.end() and pollfd_it != pollfds_.end() ) {
         if ( pollfd_it->revents & (POLLERR | POLLHUP | POLLNVAL) ) {
             //            throw Exception( "poll fd error" );
             return Result::Type::Exit;
@@ -79,8 +63,12 @@ Poller::Result Poller::poll( const int & timeout_ms )
             case ResultType::Exit:
                 return Result( Result::Type::Exit, result.exit_status );
             case ResultType::Cancel:
-                action_it->active = false;
-                break;
+                /* remove cancelled actions */
+                action_it = actions_.erase( action_it );
+                pollfd_it = pollfds_.erase( pollfd_it );
+                assert( pollfds_.size() == actions_.size() );
+                cout << "deleting cancelled actoin" << endl;
+                continue; // don't increment twice
             case ResultType::Continue:
                 break;
             }
@@ -89,6 +77,8 @@ Poller::Result Poller::poll( const int & timeout_ms )
                 throw runtime_error( "Poller: busy wait detected: callback did not read/write fd" );
             }
         }
+        action_it++;
+        pollfd_it++;
     }
 
     return Result::Type::Success;

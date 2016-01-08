@@ -79,11 +79,8 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
         /* add poller routine so incoming datagrams on this socket go to splitter server */
         incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
-                    receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_server_socket_ );
-                    return ResultType::Continue;
-                    },
-                    [&] () { return not incoming_socket.eof(); },
-                    [&, connection_uid] () { return if_done_plus_erase_on_completion( connections_, connection_uid ); } ) );
+                    return receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_server_socket_ );
+                    } ) );
     } catch ( const exception & e ) {
         print_exception( e );
     }

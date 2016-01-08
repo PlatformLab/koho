@@ -6,17 +6,20 @@
 #include <string>
 #include <map>
 
+#include "poller.hh"
 #include "socket.hh"
 #include "file_descriptor.hh"
 #include "split_tcp_connection.hh"
 #include "split_tcp_packet.pb.h"
 
-void receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
+using namespace PollerShortNames;
+
+ResultType receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
     auto connection_iter = connection_map.find( connection_uid );
     if ( connection_iter  == connection_map.end() ) {
         std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
-        return;
+        return ResultType::Continue;
     }
     TCPSocket & incoming_socket = connection_iter->second.socket;
 
@@ -24,10 +27,15 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnect
     toSend.set_uid( connection_uid );
     toSend.set_body( incoming_socket.read() );
 
+    bool finished = false;
     if ( toSend.body().size() == 0 ) {
         toSend.set_eof( true );
         toSend.clear_body();
-        connection_iter->second.shutdown = true; // eof from other side of tcp connection means we are done
+
+        finished = true;
+        int erased = connection_map.erase( connection_uid );
+        assert( erased == 1 );
+        std::cerr <<"Closing connection on EOF" << std::endl;
     } else {
         toSend.set_eof( false );
     }
@@ -38,20 +46,7 @@ void receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnect
     }
 
     other_side_socket.write( serialized_proto ); // TODO rename other side?
+    return finished ? ResultType::Cancel : ResultType::Continue;
 }
-
-bool if_done_plus_erase_on_completion( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid )
-{
-    auto connection_iter = connection_map.find( connection_uid );
-    assert( connection_iter != connection_map.end() );
-    if ( connection_iter->second.shutdown ) {
-        int erased = connection_map.erase( connection_uid );
-        assert( erased == 1 );
-        std::cerr <<"Closing connection on EOF" << std::endl;
-        return true;
-    }
-    return false;
-}
-
 
 #endif /* TCP_SPLITTER_COMMON_HH */

@@ -34,11 +34,8 @@ void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid,
 
     poller.add_action( Poller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_client_socket_ );
-                    return ResultType::Continue;
-                },
-                [&] () { return not newSocket.eof(); },
-                [&, connection_uid] () { return if_done_plus_erase_on_completion( connections_, connection_uid ); } ) );
+                    return receive_bytes_from_split_tcp_connection( connections_, connection_uid, splitter_client_socket_ );
+                } ) );
 
     newSocket.connect( dest_addr );
 }
