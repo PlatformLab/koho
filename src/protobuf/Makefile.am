@@ -1,4 +1,4 @@
-source = split_tcp_packet.proto
+source = split_tcp_packet.proto roaming_packet.proto
 
 AM_CPPFLAGS = $(protobuf_CFLAGS)
 
@@ -14,4 +14,3 @@ nodist_libtcpsplitterprotos_a_SOURCES = $(source:.proto=.pb.cc) $(source:.proto=
 
 BUILT_SOURCES = $(source:.proto=.pb.cc)
 CLEANFILES = $(source:.proto=.pb.cc) $(source:.proto=.pb.h)
-
