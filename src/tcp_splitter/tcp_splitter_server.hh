@@ -18,13 +18,13 @@ class TCP_Splitter_Server
 {
 private:
     Poller poller;
-    AutoSocket splitter_client_socket_;
-    std::map<uint64_t, SplitTCPConnection> connections_; // bool if eof
+    RoamingSocket splitter_clients_socket_;
+    std::map<std::pair<uint64_t, uint64_t>, SplitTCPConnection> connections_; // key is client_id, connection_id
 
 public:
     TCP_Splitter_Server( );
 
-    void establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr );
+    void establish_new_tcp_connection( uint64_t client_id, uint64_t connection_id, Address &dest_addr );
 
     Address local_address( void ) { return splitter_client_socket_.local_address( ); }
 
