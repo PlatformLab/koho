@@ -14,7 +14,7 @@
 
 using namespace PollerShortNames;
 
-ResultType receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
+ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
     auto connection_iter = connection_map.find( connection_uid );
     if ( connection_iter  == connection_map.end() ) {
