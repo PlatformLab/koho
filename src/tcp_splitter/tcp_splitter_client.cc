@@ -99,11 +99,10 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
         cerr << "connection uid " << received_packet.uid() <<" does not exist on client, ignoring it." << endl;
     } else {
         if ( received_packet.eof() ) {
-            cerr <<" got EOF" << endl;
+            cerr <<" got EOF from other side, erasing connection " << received_packet.uid() << endl;
             // splitter server received eof so done with this connection
             int erased = connections_.erase( received_packet.uid() );
             assert( erased == 1 );
-            return ResultType::Cancel;
         } else {
             assert( received_packet.has_body() );
             assert( received_packet.body().size() > 0 );

@@ -16,16 +16,18 @@ using namespace PollerShortNames;
 
 ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket )
 {
-    auto connection_iter = connection_map.find( connection_uid );
-    if ( connection_iter  == connection_map.end() ) {
-        std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
-        return ResultType::Continue;
-    }
-    TCPSocket & incoming_socket = connection_iter->second.socket;
-
     KohoProtobufs::SplitTCPPacket toSend;
-    toSend.set_uid( connection_uid );
-    toSend.set_body( incoming_socket.read() );
+    { // we might be deleting this socket later so don't use it outside here
+        auto connection_iter = connection_map.find( connection_uid );
+        if ( connection_iter  == connection_map.end() ) {
+            std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
+            return ResultType::Continue;
+        }
+        TCPSocket & incoming_socket = connection_iter->second.socket;
+
+        toSend.set_uid( connection_uid );
+        toSend.set_body( incoming_socket.read() );
+    }
 
     bool finished = false;
     if ( toSend.body().size() == 0 ) {
@@ -33,7 +35,7 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
         toSend.clear_body();
 
         finished = true;
-        int erased = connection_map.erase( connection_uid );
+        int erased = connection_map.erase( connection_uid ); // delete self
         assert( erased == 1 );
         std::cerr <<"Closing connection on EOF" << std::endl;
     } else {

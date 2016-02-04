@@ -49,8 +49,12 @@ Poller::Result Poller::poll( const int & timeout_ms )
     pollfd_it = pollfds_.begin();
     while ( action_it != actions_.end() and pollfd_it != pollfds_.end() ) {
         if ( pollfd_it->revents & (POLLERR | POLLHUP | POLLNVAL) ) {
-            //            throw Exception( "poll fd error" );
-            return Result::Type::Exit;
+            /* remove unusable fd's  */
+            action_it = actions_.erase( action_it );
+            pollfd_it = pollfds_.erase( pollfd_it );
+            assert( pollfds_.size() == actions_.size() );
+            cout << "deleting bad FD (probably closed)" << endl;
+            continue;
         }
 
         if ( pollfd_it->revents & pollfd_it->events ) {
