@@ -24,7 +24,7 @@ ResultType receive_bytes_from_split_tcp_connection( std::map<uint64_t, SplitTCPC
     TCPSocket & incoming_socket = connection_iter->second.socket;
 
     KohoProtobufs::SplitTCPPacket toSend;
-    toSend.set_uid( connection_uid );
+    toSend.set_connection_id( connection_uid );
     toSend.set_body( incoming_socket.read() );
 
     bool finished = false;

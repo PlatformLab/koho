@@ -8,7 +8,7 @@
 
 #include "socket.hh"
 #include "poller.hh"
-#include "autosocket.hh"
+#include "roaming_socket.hh"
 #include "split_tcp_connection.hh"
 #include "split_tcp_packet.pb.h"
 
@@ -26,7 +26,7 @@ public:
 
     void establish_new_tcp_connection( uint64_t client_id, uint64_t connection_id, Address &dest_addr );
 
-    Address local_address( void ) { return splitter_client_socket_.local_address( ); }
+    Address local_address( void ) { return splitter_clients_socket_.local_address( ); }
 
     int loop( void );
 };

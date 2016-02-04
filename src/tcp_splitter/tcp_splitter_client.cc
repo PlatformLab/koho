@@ -64,7 +64,7 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         KohoProtobufs::SplitTCPPacket connection_metadata;
-        connection_metadata.set_uid( connection_uid );
+        connection_metadata.set_connection_id( connection_uid );
         connection_metadata.set_eof( false );
         connection_metadata.set_address( incoming_socket.original_dest().ip() );
         connection_metadata.set_port( incoming_socket.original_dest().port() );
@@ -93,15 +93,15 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
         return ResultType::Continue;
     }
 
-    cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.uid() << endl;
-    auto connection_iter = connections_.find( received_packet.uid() );
+    cerr << "DATA FROM SPLITTER SERVER for connection id " << received_packet.connection_id() << endl;
+    auto connection_iter = connections_.find( received_packet.connection_id() );
     if ( connection_iter  == connections_.end() ) {
-        cerr << "connection uid " << received_packet.uid() <<" does not exist on client, ignoring it." << endl;
+        cerr << "connection id " << received_packet.connection_id() <<" does not exist on client, ignoring it." << endl;
     } else {
         if ( received_packet.eof() ) {
             cerr <<" got EOF" << endl;
             // splitter server received eof so done with this connection
-            int erased = connections_.erase( received_packet.uid() );
+            int erased = connections_.erase( received_packet.connection_id() );
             assert( erased == 1 );
             return ResultType::Cancel;
         } else {
