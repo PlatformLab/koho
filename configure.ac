@@ -56,9 +56,6 @@ AC_DEFINE_UNQUOTED([MOD_SSL_KEY], ["/etc/ssl/private/ssl-cert-snakeoil.key"], [p
 # Checks for libraries.
 PKG_CHECK_MODULES([protobuf], [protobuf])
 PKG_CHECK_MODULES([libssl], [libcrypto libssl])
-PKG_CHECK_MODULES([libapr1], [apr-1])
-PKG_CHECK_MODULES([XCBPRESENT], [xcb-present])
-PKG_CHECK_MODULES([PANGOCAIRO], [pangocairo])
 
 # Checks for header files.
 AC_HEADER_RESOLV
