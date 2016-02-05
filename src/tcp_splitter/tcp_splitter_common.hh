@@ -26,7 +26,7 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
         TCPSocket & incoming_socket = connection_iter->second.socket;
 
         toSend.set_uid( connection_uid );
-        toSend.set_body( incoming_socket.read() );
+        toSend.set_body( incoming_socket.read( 1024 ) ); // to avoid oversize packets TODO this could probably be better
     }
 
     bool finished = false;
