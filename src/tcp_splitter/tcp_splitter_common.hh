@@ -28,15 +28,14 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
         body = incoming_socket.read( 1024 ); // to avoid oversize packets TODO this could probably be better
     }
 
-    bool eof = body.size() == 0;
-    if ( eof ) {
+    if ( body.size() == 0 ) {
         int erased = connection_map.erase( connection_uid ); // delete self
         assert( erased == 1 );
         std::cerr <<"Closing connection on EOF" << std::endl;
     }
-
-    other_side_socket.write( SplitTCPPacket( connection_uid, eof, body ).toString() ); // TODO rename other side?
-    return eof ? ResultType::Cancel : ResultType::Continue;
+    SplitTCPPacket toSend( false, connection_uid, body );
+    other_side_socket.write( toSend.toString() );
+    return body.size() == 0 ? ResultType::Cancel : ResultType::Continue;
 }
 
 #endif /* TCP_SPLITTER_COMMON_HH */

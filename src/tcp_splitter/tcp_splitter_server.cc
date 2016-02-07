@@ -51,21 +51,23 @@ int TCP_Splitter_Server::loop( void )
                 cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid << endl;
                 auto connection_iter = connections_.find( received_packet.uid );
                 if ( connection_iter == connections_.end() ) {
-                    assert( received_packet.conn_type == SplitTCPPacket::connection_type::NEW );
+                    assert( received_packet.new_connection );
 
-                    Address dest_addr( received_packet.new_connection.address, received_packet.new_connection.port );
+                    size_t pos = received_packet.body.find(':');
+                    assert( pos != std::string::npos );
+                    Address dest_addr(received_packet.body.substr(0,pos), uint16_t(atoi(received_packet.body.substr(pos+1).c_str())) );
                     establish_new_tcp_connection( received_packet.uid, dest_addr );
                 } else {
-                    assert( received_packet.conn_type == SplitTCPPacket::connection_type::EXISTING );
-                    if ( received_packet.existing_connection.eof ) {
-                        cout<< "erasing connection " << received_packet.uid << endl;
+                    assert( not received_packet.new_connection );
+                    if ( received_packet.body.size() == 0 ) {
+                        cout<< "got eof, erasing connection " << received_packet.uid << endl;
                         int erased = connections_.erase( received_packet.uid );
                         assert( erased == 1 );
                     } else {
-                        assert( received_packet.existing_connection.body.size() > 0 );
+                        assert( received_packet.body.size() > 0 );
 
-                        cerr << "forwarding packet with body " << received_packet.existing_connection.body << " to established connection" << endl;
-                        connection_iter->second.socket.write( received_packet.existing_connection.body );
+                        cerr << "forwarding packet with body " << received_packet.body << " to established connection" << endl;
+                        connection_iter->second.socket.write( received_packet.body );
                     }
                 }
 

@@ -63,7 +63,7 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
         TCPSocket & incoming_socket = connection_iter->second.socket;
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
-        SplitTCPPacket connection_metadata(connection_uid, incoming_socket.original_dest().ip(), incoming_socket.original_dest().port() );
+        SplitTCPPacket connection_metadata( true, connection_uid, incoming_socket.original_dest().str() );
 
         splitter_server_socket_.write( connection_metadata.toString() );
 
@@ -80,20 +80,21 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
 Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
 {
     SplitTCPPacket received_packet(splitter_server_socket_.read()); // dubious;
+    assert(not received_packet.new_connection);
 
     cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.uid << endl;
     auto connection_iter = connections_.find( received_packet.uid );
     if ( connection_iter  == connections_.end() ) {
         cerr << "connection uid " << received_packet.uid <<" does not exist on client, ignoring it." << endl;
     } else {
-        if ( received_packet.existing_connection.eof ) {
+        if ( received_packet.body.size() == 0 ) {
             cerr <<" got EOF from other side, erasing connection " << received_packet.uid << endl;
             // splitter server received eof so done with this connection
             int erased = connections_.erase( received_packet.uid );
             assert( erased == 1 );
         } else {
-            assert( received_packet.existing_connection.body.size() > 0 );
-            connection_iter->second.socket.write( received_packet.existing_connection.body );
+            assert( received_packet.body.size() > 0 );
+            connection_iter->second.socket.write( received_packet.body );
         }
     }
     return ResultType::Continue;
