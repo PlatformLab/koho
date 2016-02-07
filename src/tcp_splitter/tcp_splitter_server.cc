@@ -46,32 +46,26 @@ int TCP_Splitter_Server::loop( void )
     
     poller.add_action( Poller::Action( splitter_client_socket, Direction::In,
                 [&] () {
-                const string buffer = splitter_client_socket.read();
+                SplitTCPPacket received_packet( splitter_client_socket.read() );
 
-                KohoProtobufs::SplitTCPPacket received_packet;
-                if (!received_packet.ParseFromString( buffer ) ) {
-                    cerr << "Failed to deserialize packet from splitter client, ignoring it." << endl;
-                    return ResultType::Continue;
-                }
-                cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid() << " and has body " << received_packet.has_body() << endl;
-                auto connection_iter = connections_.find( received_packet.uid() );
-                if ( connection_iter  == connections_.end() ) {
-                    assert( received_packet.has_address() );
-                    assert( received_packet.has_port() );
+                cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid << endl;
+                auto connection_iter = connections_.find( received_packet.uid );
+                if ( connection_iter == connections_.end() ) {
+                    assert( received_packet.conn_type == SplitTCPPacket::connection_type::NEW );
 
-                    Address dest_addr( received_packet.address(), received_packet.port() );
-                    establish_new_tcp_connection( received_packet.uid(), dest_addr );
+                    Address dest_addr( received_packet.new_connection.address, received_packet.new_connection.port );
+                    establish_new_tcp_connection( received_packet.uid, dest_addr );
                 } else {
-                    if ( received_packet.eof() ) {
-                        cout<< "erasing connection " << received_packet.uid() << endl;
-                        int erased = connections_.erase( received_packet.uid() );
+                    assert( received_packet.conn_type == SplitTCPPacket::connection_type::EXISTING );
+                    if ( received_packet.existing_connection.eof ) {
+                        cout<< "erasing connection " << received_packet.uid << endl;
+                        int erased = connections_.erase( received_packet.uid );
                         assert( erased == 1 );
                     } else {
-                        assert( received_packet.has_body() );
-                        assert( received_packet.body().size() > 0 );
+                        assert( received_packet.existing_connection.body.size() > 0 );
 
-                        cerr << "forwarding packet with body " << received_packet.body() << " to established connection" << endl;
-                        connection_iter->second.socket.write( received_packet.body() );
+                        cerr << "forwarding packet with body " << received_packet.existing_connection.body << " to established connection" << endl;
+                        connection_iter->second.socket.write( received_packet.existing_connection.body );
                     }
                 }
 

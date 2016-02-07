@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(srcdir)/../util -I../tcp_splitter -I../protobuf $(CXX11_FLAGS)
+AM_CPPFLAGS = -I$(srcdir)/../util -I../tcp_splitter $(CXX11_FLAGS)
 AM_CXXFLAGS = $(PICKY_CXXFLAGS)
 
 noinst_LIBRARIES = libpacket.a

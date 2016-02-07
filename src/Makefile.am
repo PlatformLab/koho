@@ -1,1 +1,1 @@
-SUBDIRS = protobuf util tcp_splitter packet frontend
+SUBDIRS = util tcp_splitter packet frontend
