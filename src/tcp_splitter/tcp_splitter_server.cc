@@ -48,20 +48,20 @@ int TCP_Splitter_Server::loop( void )
                 [&] () {
                 SplitTCPPacket received_packet( splitter_client_socket.read() );
 
-                cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.uid << endl;
-                auto connection_iter = connections_.find( received_packet.uid );
+                cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.header.uid << endl;
+                auto connection_iter = connections_.find( received_packet.header.uid );
                 if ( connection_iter == connections_.end() ) {
-                    assert( received_packet.new_connection );
+                    assert( received_packet.header.new_connection );
 
                     size_t pos = received_packet.body.find(':');
                     assert( pos != std::string::npos );
                     Address dest_addr(received_packet.body.substr(0,pos), uint16_t(atoi(received_packet.body.substr(pos+1).c_str())) );
-                    establish_new_tcp_connection( received_packet.uid, dest_addr );
+                    establish_new_tcp_connection( received_packet.header.uid, dest_addr );
                 } else {
-                    assert( not received_packet.new_connection );
+                    assert( not received_packet.header.new_connection );
                     if ( received_packet.body.size() == 0 ) {
-                        cout<< "got eof, erasing connection " << received_packet.uid << endl;
-                        int erased = connections_.erase( received_packet.uid );
+                        cout<< "got eof, erasing connection " << received_packet.header.uid << endl;
+                        int erased = connections_.erase( received_packet.header.uid );
                         assert( erased == 1 );
                     } else {
                         assert( received_packet.body.size() > 0 );
