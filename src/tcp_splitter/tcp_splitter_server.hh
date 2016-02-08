@@ -10,7 +10,6 @@
 #include "poller.hh"
 #include "autosocket.hh"
 #include "split_tcp_connection.hh"
-#include "split_tcp_packet.pb.h"
 
 class Poller;
 
