@@ -24,8 +24,8 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
             return ResultType::Continue;
         }
         TCPSocket & incoming_socket = connection_iter->second.socket;
-
-        body = incoming_socket.read( 1024 ); // to avoid oversize packets TODO this could probably be better
+        /* to avoid oversize packets, given potential for double wrapped UDP and our own split packet header */
+        body = incoming_socket.read( 1500 - 56 - 56 - sizeof( SplitTCPPacket::Header ) );
     }
 
     if ( body.size() == 0 ) {
