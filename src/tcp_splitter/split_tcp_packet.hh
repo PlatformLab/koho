@@ -6,6 +6,30 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
+
+/* Adapted from https://github.com/keithw/sourdough/blob/master/datagrump/contest_message.cc */
+
+/* helper to get the nth uint64_t field (in network byte order) */
+uint64_t get_field( const size_t n, const std::string & str )
+{
+    if ( str.size() < (n + 1) * sizeof( uint64_t ) ) {
+        throw std::runtime_error( "message too small to parse field " + n );
+    }
+
+    const uint64_t * const data_ptr
+        = reinterpret_cast<const uint64_t *>( str.data() ) + n;
+
+    return be64toh( *data_ptr );
+}
+
+/* helper to put a uint64_t field (in network byte order) */
+std::string put_field( const uint64_t n )
+{
+      const uint64_t network_order = htobe64( n );
+        return std::string( reinterpret_cast<const char *>( &network_order ),
+                 sizeof( network_order ) );
+}
 
 struct SplitTCPPacket {
     bool new_connection;
@@ -17,32 +41,15 @@ struct SplitTCPPacket {
     { };
 
     std::string toString() const {
-        std::ostringstream ret;
-        ret << new_connection;
-        ret << uid;
-        ret << body;
-
-        std::cerr << "good one serialized is " << ret.str() << std::endl;
-        SplitTCPPacket other( ret.str() );
-        std::cerr << "made other " << std::endl;
-        assert( new_connection == other.new_connection );
-        std::cerr << "uid " << uid  << " while other " << other.uid << std::endl;
-        assert( uid == other.uid );
-        assert( body == other.body );
-        std::cerr << "serialization good" << std::endl;
-        return ret.str();
+        return put_field(new_connection) + put_field(uid) + body;
     };
 
     /* Parse from string */
     SplitTCPPacket(std::string serialized) 
-    : new_connection(false), uid(-1), body((char *)&uid)
-    { 
-        std::istringstream str( serialized.data() );
-        str >> new_connection;
-        str >> uid;
-        std::cerr << "got uid " << uid << std::endl;
-        str >> body;
-    };
+    : new_connection( get_field( 0, serialized ) ),
+    uid( get_field( 1, serialized ) ),
+    body( serialized.begin() + 2 * sizeof( uint64_t ), serialized.end() )
+    { };
 };
 
 
