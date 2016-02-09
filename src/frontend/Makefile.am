@@ -7,8 +7,8 @@ koho_client_LDADD = -lrt ../util/libutil.a ../tcp_splitter/libtcpsplitter.a ../p
 koho_client_LDFLAGS = -pthread
 
 bin_PROGRAMS += koho-server
-koho_server_SOURCES = koho-server.cc trivial_queue.hh
-koho_server_LDADD = -lrt ../util/libutil.a ../tcp_splitter/libtcpsplitter.a ../packet/libpacket.a
+koho_server_SOURCES = koho-server.cc
+koho_server_LDADD = -lrt ../util/libutil.a ../tcp_splitter/libtcpsplitter.a
 koho_server_LDFLAGS = -pthread
 
 install-exec-hook:
