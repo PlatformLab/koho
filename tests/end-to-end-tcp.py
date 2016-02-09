@@ -15,27 +15,36 @@ def timeout(sig,frm):
 signal.signal(signal.SIGALRM, timeout)
 signal.alarm(2)
 
-server = subprocess.Popen(['nc', '-l', '12345']) 
+server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+server_sock.bind(("0", 0))
+
+server_sock.listen(1)
+
+local_port = server_sock.getsockname()[1]
 
 splitter_server = subprocess.Popen('koho-server',
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE)
 
-toRun = splitter_server.stderr.readline()
-print(toRun)
+clientCommandToRun = splitter_server.stderr.readline()
+
+
+payload_size = random.randint(1, 10000)
+
+outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size))
 
 sys.stderr.write("Running koho-client... ")
-os.system(toRun)
-os.system('echo greg is the best | nc 127.1 12345')
-sys.stderr.write("done.\n")
+command_string = "echo python tcp_sender.py %d %s | " % (local_port, outgoing_payload ) + clientCommandToRun
+os.system(command_string)
 
-#sys.stderr.write("Waiting for receiver to print out incoming UDP datagram... ")
-#expected_payload = "Hello, world."
-#incoming_payload = prog.stdout.read()
-#
-#if incoming_payload == expected_payload:
-#    sys.stderr.write("success.\n")
-#    sys.exit( 0 )
-#else:
-#    sys.stderr.write('\nError: expected "%s" and received "%s".\n' % (expected_payload, incoming_payload))
-#    sys.exit( 1 )
+(incoming_connection, _) = server_sock.accept()
+
+incoming_payload = incoming_connection.recv(payload_size)
+
+if incoming_payload == outgoing_payload:
+    sys.stderr.write("success.\n")
+    sys.exit( 0 )
+else:
+    sys.stderr.write('\nError: expected "%s" and received "%s".\n' % (outgoing_payload, incoming_payload))
+    sys.exit( 1 )
