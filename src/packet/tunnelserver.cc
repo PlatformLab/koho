@@ -77,12 +77,12 @@ void TunnelServer<FerryQueueType>::start_downlink( Targs&&... Fargs )
 
 
             dns_outside_.register_handlers( outer_ferry );
-            cout << "koho-client " << ingress_addr().ip();
-            cout << " " << dns_outside_.udp_listener().local_address().str( " " );
-            cout << " " << tcp_splitter_server.local_address().str( " " );
-            cout << " " << listening_socket_.local_address().port();
-            //cout << " [server ip]" << endl; XXX go back to this later
-            cout << " 127.1" << endl;
+            cerr << "koho-client " << ingress_addr().ip();
+            cerr << " " << dns_outside_.udp_listener().local_address().str( " " );
+            cerr << " " << tcp_splitter_server.local_address().str( " " );
+            cerr << " " << listening_socket_.local_address().port();
+            //cerr << " [server ip]" << endl; XXX go back to this later
+            cerr << " 127.1" << endl;
 
             FerryQueueType downlink_queue { ferry_maker() };
             return outer_ferry.loop( downlink_queue, egress_tun_, listening_socket_ );

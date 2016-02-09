@@ -79,18 +79,18 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
 
 Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
 {
-    SplitTCPPacket received_packet(splitter_server_socket_.read()); // dubious;
-    assert(not received_packet.new_connection);
+    SplitTCPPacket received_packet( splitter_server_socket_.read() );
+    assert( not received_packet.header.new_connection );
 
-    cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.uid << endl;
-    auto connection_iter = connections_.find( received_packet.uid );
+    cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.header.uid << endl;
+    auto connection_iter = connections_.find( received_packet.header.uid );
     if ( connection_iter  == connections_.end() ) {
-        cerr << "connection uid " << received_packet.uid <<" does not exist on client, ignoring it." << endl;
+        cerr << "connection uid " << received_packet.header.uid <<" does not exist on client, ignoring it." << endl;
     } else {
         if ( received_packet.body.size() == 0 ) {
-            cerr <<" got EOF from other side, erasing connection " << received_packet.uid << endl;
+            cerr <<" got EOF from other side, erasing connection " << received_packet.header.uid << endl;
             // splitter server received eof so done with this connection
-            int erased = connections_.erase( received_packet.uid );
+            int erased = connections_.erase( received_packet.header.uid );
             assert( erased == 1 );
         } else {
             assert( received_packet.body.size() > 0 );

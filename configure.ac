@@ -54,7 +54,6 @@ AC_DEFINE_UNQUOTED([MOD_SSL_CERTIFICATE_FILE], ["/etc/ssl/certs/ssl-cert-snakeoi
 AC_DEFINE_UNQUOTED([MOD_SSL_KEY], ["/etc/ssl/private/ssl-cert-snakeoil.key"], [path to ssl key])
 
 # Checks for libraries.
-PKG_CHECK_MODULES([protobuf], [protobuf])
 PKG_CHECK_MODULES([libssl], [libcrypto libssl])
 
 # Checks for header files.
@@ -77,6 +76,7 @@ AC_TYPE_UINT8_T
 AC_CHECK_FUNCS([clock_gettime inet_ntoa memset mkdir setenv socket strerror strtol])
 
 AC_CONFIG_FILES([Makefile
+		 tests/Makefile
 		 src/Makefile
 		 src/util/Makefile
 		 src/tcp_splitter/Makefile
