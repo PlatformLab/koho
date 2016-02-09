@@ -27,16 +27,15 @@ splitter_server = subprocess.Popen('koho-server',
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE)
 
-clientCommandToRun = splitter_server.stderr.readline()
+kohoClientCommand = splitter_server.stderr.readline()
 
 
-payload_size = random.randint(1, 10000)
+payload_size = random.randint(100, 10000)
 
 outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size))
 
-sys.stderr.write("Running koho-client... ")
-command_string = "echo python tcp_sender.py %d %s | " % (local_port, outgoing_payload ) + clientCommandToRun
-os.system(command_string)
+# run tcp sender inside koho-client shell
+os.system("echo python tcp_sender.py %d %s | " % (local_port, outgoing_payload) + kohoClientCommand)
 
 (incoming_connection, _) = server_sock.accept()
 

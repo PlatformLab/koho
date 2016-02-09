@@ -76,6 +76,7 @@ AC_TYPE_UINT8_T
 AC_CHECK_FUNCS([clock_gettime inet_ntoa memset mkdir setenv socket strerror strtol])
 
 AC_CONFIG_FILES([Makefile
+		 tests/Makefile
 		 src/Makefile
 		 src/util/Makefile
 		 src/tcp_splitter/Makefile

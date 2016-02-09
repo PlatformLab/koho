@@ -8,6 +8,9 @@
 .deps
 Makefile
 Makefile.in
+/test-driver
+/tests/*.log
+/tests/*.trs
 
 /INSTALL
 /aclocal.m4
