@@ -7,5 +7,5 @@ koho_server_LDADD = -lrt ../util/libutil.a ../tcp_splitter/libtcpsplitter.a
 koho_server_LDFLAGS = -pthread
 
 install-exec-hook:
-	hown root $(DESTDIR)$(bindir)/koho-server
+	chown root $(DESTDIR)$(bindir)/koho-server
 	chmod u+s $(DESTDIR)$(bindir)/koho-server
