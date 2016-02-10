@@ -118,7 +118,7 @@ int main( int argc, char *argv[] )
                     shell_event_loop.add_child_process( join( command ), [&]() {
                             /* restore environment and tweak prompt */
                             environ = user_environment;
-                            prepend_shell_prefix( "[koho "+ tcp_splitter_client.tcp_listener().local_address().str() + "] " );
+                            prepend_shell_prefix( "[koho "+ tcp_splitter_server_address.str() + "] " );
 
                             return ezexec( command, true );
                         } );
