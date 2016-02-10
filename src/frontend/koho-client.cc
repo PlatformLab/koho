@@ -17,7 +17,6 @@
 #include "config.h"
 #include "exception.hh"
 
-#include "trivial_queue.hh"
 #include "util.hh"
 #include "ezio.hh"
 #include "tcp_splitter_client.hh"

@@ -2,8 +2,8 @@ AM_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../tcp_splitter $(CXX11_FLAGS)
 AM_CXXFLAGS = $(PICKY_CXXFLAGS)
 
 bin_PROGRAMS = koho-client
-koho_client_SOURCES = koho-client.cc trivial_queue.hh tunnelclient.hh tunnelclient.cc
-koho_client_LDADD = -lrt ../util/libutil.a ../tcp_splitter/libtcpsplitter.a
+koho_client_SOURCES = koho-client.cc
+koho_client_LDADD = -lrt ../tcp_splitter/libtcpsplitter.a ../util/libutil.a
 koho_client_LDFLAGS = -pthread
 
 bin_PROGRAMS += koho-server
