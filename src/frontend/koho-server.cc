@@ -16,6 +16,6 @@ int main( int argc, char *argv[] )
     }
 
     TCP_Splitter_Server tcp_splitter_server = TCP_Splitter_Server();
-    std::cerr << "koho-client " << tcp_splitter_server.local_address().str( " " ) << std::endl;
+    std::cerr << "koho-client 127.1 " << tcp_splitter_server.local_address().port() << std::endl;
     return tcp_splitter_server.loop();
 }
