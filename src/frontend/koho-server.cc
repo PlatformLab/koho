@@ -15,8 +15,7 @@ int main( int argc, char *argv[] )
         throw std::runtime_error( "Usage: " + std::string( argv[ 0 ] ) );
     }
 
-    TCP_Splitter_Server splitter_server = TCP_Splitter_Server();
-    /* clreate splitter server process */
-    //std::cerr << "koho-client " << splitter_server.local_address().str( " " ) << std::endl;
-    return splitter_server.loop();
+    TCP_Splitter_Server tcp_splitter_server = TCP_Splitter_Server();
+    std::cerr << "koho-client " << tcp_splitter_server.local_address().str( " " ) << std::endl;
+    return tcp_splitter_server.loop();
 }
