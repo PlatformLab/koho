@@ -17,19 +17,9 @@ using namespace std;
 NATRule::NATRule( const vector< string > & s_args )
     : arguments( s_args )
 {
-    try {
     vector< string > command = { IPTABLES, "-w", "-t", "nat", "-A" };
     command.insert( command.end(), arguments.begin(), arguments.end() );
-    cout << "trying to run! ";
-    for (string &s : command )
-        cout << s << " ";
-
-    cout << endl;
     run( command );
-    } catch ( const exception & e ) { /* don't throw from destructor */
-        cerr<< "PROBLEMOOOO" << endl;
-        print_exception( e );
-    }
 }
 
 NATRule::~NATRule()
@@ -50,7 +40,7 @@ NAT::NAT( const Address & ingress_addr )
               "--mark", to_string( getpid() ) } )
 {}
 
-DNAT::DNAT( const Address & listener, const string & )
-    : rule_( { "OUTPUT", "-p", "TCP", /*"-i", interface, */"-j", "DNAT",
+DNAT::DNAT( const Address & listener, const string & interface )
+    : rule_( { "PREROUTING", "-p", "TCP", "-i", interface, "-j", "DNAT",
                 "--to-destination", listener.str() } )
 {}
