@@ -16,6 +16,7 @@
 #include "socketpair.hh"
 #include "config.h"
 #include "exception.hh"
+#include "dns_proxy.hh"
 
 #include "util.hh"
 #include "ezio.hh"
@@ -49,7 +50,7 @@ int main( int argc, char *argv[] )
             }
         }
 
-        //const Address nameserver = first_nameserver();
+        const Address nameserver = first_nameserver();
 
         /* set egress and ingress ip addresses */
         Address egress_addr, ingress_addr;
@@ -63,7 +64,7 @@ int main( int argc, char *argv[] )
         assign_address( egress_name, egress_addr, ingress_addr );
 
         /* create DNS proxy */
-        //DNSProxy dns_outside( egress_addr, nameserver, nameserver );
+        DNSProxy dns_outside( egress_addr, nameserver, nameserver );
 
         /* set up NAT between egress and eth0 */
         NAT nat_rule( ingress_addr );
@@ -105,9 +106,9 @@ int main( int argc, char *argv[] )
                     SystemCall( "ioctl SIOCADDRT", ioctl( UDPSocket().fd_num(), SIOCADDRT, &route ) );
 
                     /* create DNS proxy if nameserver address is local */
-                    //auto dns_inside = DNSProxy::maybe_proxy( nameserver,
-                    //                                         dns_outside.udp_listener().local_address(),
-                    //                                         dns_outside.tcp_listener().local_address() );
+                    auto dns_inside = DNSProxy::maybe_proxy( nameserver,
+                                                             dns_outside.udp_listener().local_address(),
+                                                             dns_outside.tcp_listener().local_address() );
 
                     /* Fork again after dropping root privileges */
                     drop_privileges();
@@ -123,9 +124,9 @@ int main( int argc, char *argv[] )
                             return ezexec( command, true );
                         } );
 
-                    //if ( dns_inside ) {
-                    //    dns_inside->register_handlers( shell_event_loop );
-                    //}
+                    if ( dns_inside ) {
+                        dns_inside->register_handlers( shell_event_loop );
+                    }
 
                     return shell_event_loop.loop();
                 }, true ); /* new network namespace */
