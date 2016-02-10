@@ -142,6 +142,13 @@ int main( int argc, char *argv[] )
             outer_event_loop.add_child_process( move( container_process ) );
         }
 
+        /* run the tcp splitter client in a different unprivileged child */
+        outer_event_loop.add_child_process( "tcp-splitter-client", [&]() {
+                drop_privileges();
+
+                return tcp_splitter_client.loop();
+                } );
+
         return outer_event_loop.loop();
     } catch ( const exception & e ) {
         print_exception( e );
