@@ -70,7 +70,7 @@ int main( int argc, char *argv[] )
 
         /* set up http proxy for tcp */
         //HTTPProxy http_proxy( egress_addr );
-        TCP_Splitter_Client tcp_splitter_client( ingress_addr, tcp_splitter_server_address);
+        TCP_Splitter_Client tcp_splitter_client( egress_addr, tcp_splitter_server_address);
 
         /* set up dnat */
         DNAT dnat( tcp_splitter_client.tcp_listener().local_address(), egress_name );
