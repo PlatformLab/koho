@@ -26,7 +26,7 @@ int main( int argc, char *argv[] )
     DNSProxy dns_outside( dns_server, nameserver, nameserver );
     TCP_Splitter_Server tcp_splitter_server = TCP_Splitter_Server( splitter_server_listen );
 
-    std::cerr << "koho-client 127.1 " << tcp_splitter_server.local_address().port() << " " << dns_outside.udp_listener().local_address().port() << std::endl;
+    std::cerr << "koho-client 127.1 " << tcp_splitter_server.local_address().port() << " 100.64.1 " << dns_outside.udp_listener().local_address().port() << std::endl; // XXX making assumption on address
 
     main_event_loop.add_child_process( "tcp-splitter-server", [&]() {
             drop_privileges(); // TODO needed?
