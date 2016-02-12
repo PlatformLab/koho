@@ -16,7 +16,8 @@
 #include "socketpair.hh"
 #include "config.h"
 #include "exception.hh"
-#include "dns_proxy.hh"
+#include "dns_server.hh"
+#include "system_runner.hh"
 
 #include "util.hh"
 #include "ezio.hh"
@@ -33,24 +34,24 @@ int main( int argc, char *argv[] )
 
         check_requirements( argc, argv );
 
-        if ( argc < 3 ) {
-            throw runtime_error( "Usage: " + string( argv[ 0 ] ) + " TCP-SPLITTER-SERVER-IP TCP-SPLITTER-SERVER-PORT [command...]" );
+        const size_t num_args = 4;
+        if ( num_args < 4 ) {
+            throw runtime_error( "Usage: " + string( argv[ 0 ] ) + " TCP-SPLITTER-SERVER-IP TCP-SPLITTER-SERVER-PORT DNS-SERVER-PORT [command...]" );
         }
 
         Address tcp_splitter_server_address = { argv[ 1 ], argv[ 2 ] };
+        Address caching_dns_server_address = { argv[ 1 ], argv[ 3 ] };
 
         vector< string > command;
 
         /* what command will we run inside the container? */
-        if ( argc == 3 ) {
+        if ( argc == num_args ) {
             command.push_back( shell_path() );
         } else {
-            for ( int i = 3; i < argc; i++ ) {
+            for ( int i = num_args; i < argc; i++ ) {
                 command.push_back( argv[ i ] );
             }
         }
-
-        const Address nameserver = first_nameserver();
 
         /* set egress and ingress ip addresses */
         Address egress_addr, ingress_addr;
@@ -62,9 +63,6 @@ int main( int argc, char *argv[] )
 
         /* bring up egress */
         assign_address( egress_name, egress_addr, ingress_addr );
-
-        /* create DNS proxy */
-        DNSProxy dns_outside( egress_addr, nameserver, nameserver );
 
         /* set up NAT between egress and eth0 */
         NAT nat_rule( ingress_addr );
@@ -105,28 +103,26 @@ int main( int argc, char *argv[] )
 
                     SystemCall( "ioctl SIOCADDRT", ioctl( UDPSocket().fd_num(), SIOCADDRT, &route ) );
 
-                    /* create DNS proxy if nameserver address is local */
-                    auto dns_inside = DNSProxy::maybe_proxy( nameserver,
-                                                             dns_outside.udp_listener().local_address(),
-                                                             dns_outside.tcp_listener().local_address() );
+                    /* prepare child's event loop */
+                    EventLoop shell_event_loop;
+
+                    /* run dnsmasq as local caching nameserver */
+                    std::cout << "trying to start dnsmasq with addr " << caching_dns_server_address.str( "#" ) << std::endl;
+                    shell_event_loop.add_child_process( start_dnsmasq( { "-S", caching_dns_server_address.str( "#" ) } ) );
 
                     /* Fork again after dropping root privileges */
                     drop_privileges();
 
-                    /* prepare child's event loop */
-                    EventLoop shell_event_loop;
+                    /* restore environment and tweak prompt */
+                    environ = user_environment;
 
                     shell_event_loop.add_child_process( join( command ), [&]() {
-                            /* restore environment and tweak prompt */
-                            environ = user_environment;
                             prepend_shell_prefix( "[koho "+ tcp_splitter_server_address.str() + "] " );
 
+                            
+                    std::cout << "trying exec " << join( command ) << std::endl;
                             return ezexec( command, true );
                         } );
-
-                    if ( dns_inside ) {
-                        dns_inside->register_handlers( shell_event_loop );
-                    }
 
                     return shell_event_loop.loop();
                 }, true ); /* new network namespace */
