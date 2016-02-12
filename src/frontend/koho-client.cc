@@ -40,7 +40,6 @@ int main( int argc, char *argv[] )
         }
 
         Address tcp_splitter_server_address = { argv[ 1 ], argv[ 2 ] };
-        Address caching_dns_server_address = { argv[ 1 ], argv[ 3 ] };
 
         vector< string > command;
 
@@ -56,6 +55,8 @@ int main( int argc, char *argv[] )
         /* set egress and ingress ip addresses */
         Address egress_addr, ingress_addr;
         tie( egress_addr, ingress_addr ) = two_unassigned_addresses();
+
+        Address caching_dns_server_address = { egress_addr, argv[ 3 ] }; // XXX HACK only works when server and client on same machine
 
         /* make pair of devices */
         string egress_name = "veth-" + to_string( getpid() ), ingress_name = "veth-i" + to_string( getpid() );
