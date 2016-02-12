@@ -19,12 +19,12 @@
 using namespace std;
 using namespace PollerShortNames;
 
-TCP_Splitter_Server::TCP_Splitter_Server( )
+TCP_Splitter_Server::TCP_Splitter_Server( const Address & listen_address )
     : poller(),
     splitter_client_socket_(),
     connections_()
 {
-    splitter_client_socket_.bind( Address() );
+    splitter_client_socket_.bind( listen_address );
 }
 
 void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr )

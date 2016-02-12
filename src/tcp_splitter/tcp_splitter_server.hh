@@ -21,7 +21,7 @@ private:
     std::map<uint64_t, SplitTCPConnection> connections_; // bool if eof
 
 public:
-    TCP_Splitter_Server( );
+    TCP_Splitter_Server( const Address & listen_address );
 
     void establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr );
 
