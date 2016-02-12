@@ -1,8 +1,5 @@
 *.a
 *.o
-*.lo
-*.la
-*.slo
 *.pb.cc
 *.pb.h
 .deps
@@ -14,7 +11,6 @@ Makefile.in
 
 /INSTALL
 /aclocal.m4
-/ar-lib
 /autom4te.cache
 /config.h
 /config.h.in
@@ -27,12 +23,9 @@ Makefile.in
 /depcomp
 /install-sh
 /missing
-/mahimahi-*.tar.gz
+/koho-*.tar.gz
 /stamp-h1
-/libtool
-/ltmain.sh
 
 /compile
 /src/frontend/koho-client
 /src/frontend/koho-server
-/src/frontend/.libs
