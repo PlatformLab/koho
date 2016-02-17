@@ -26,10 +26,11 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
     epoller_(),
     connections_()
 {
-    listener_socket_.bind( listener_addr );
-    listener_socket_.listen();
     cout << "connecting to splitter server addr " << splitter_server_addr.str() << endl;
     splitter_server_socket_.connect( splitter_server_addr );
+
+    listener_socket_.bind( listener_addr );
+    listener_socket_.listen();
 }
 
 int TCP_Splitter_Client::loop( void )
@@ -79,6 +80,7 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
 Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
 {
     SplitTCPPacket received_packet( splitter_server_socket_.read() );
+    /* splitter server should never initiate connections */
     assert( not received_packet.header.new_connection );
 
     //cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.header.uid << endl;
