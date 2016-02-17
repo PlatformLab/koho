@@ -38,7 +38,7 @@ public:
                 
             : fd( s_fd ), direction( s_direction ), callback( s_callback ) {}
 
-        //unsigned int service_count( void ) const;
+        unsigned int service_count( void ) const;
     };
 
 private:

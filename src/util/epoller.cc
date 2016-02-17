@@ -13,7 +13,7 @@ Epoller::Epoller( )
 {
     epoll_fd_ = SystemCall( "epoll_create", ::epoll_create( 1 ) );
     if ( epoll_fd_ < 0 ) {
-        cerr << "epoll error in create!" << endl;
+        throw runtime_error( "Couldn't create epoller" );
     }
 }
 
@@ -44,10 +44,10 @@ void Epoller::remove_action( int file_descriptor )
     cerr << "epoll erased fd " << file_descriptor << endl;
 }
 
-//unsigned int Epoller::Action::service_count( void ) const
-//{
-//    return direction == Direction::In ? fd.read_count() : fd.write_count();
-//}
+unsigned int Epoller::Action::service_count( void ) const
+{
+    return direction == Direction::In ? fd.read_count() : fd.write_count();
+}
 
 Epoller::Result Epoller::poll( const int & timeout_ms )
 {
@@ -62,17 +62,18 @@ Epoller::Result Epoller::poll( const int & timeout_ms )
     }
 
     for (int n = 0; n < num_fds; n++) {
-        auto action = actions_.at( events[n].data.fd );
-        //const auto count_before = action.service_count();
-        auto result = action.callback();
+        auto action_it = actions_.find( events[n].data.fd );
+        assert( action_it != actions_.end() );
+        const auto service_count_before_callback = action_it->second.service_count();
+        auto callback_result = action_it->second.callback();
 
-            if ( result.result == ResultType::Exit) {
-                return Result( Result::Type::Exit, result.exit_status );
-            }
+        if ( callback_result.result == ResultType::Exit) {
+            return Result( Result::Type::Exit, callback_result.exit_status );
+        }
 
-            //if ( count_before == action_it->service_count() ) {
-            //    throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd" );
-            //}
+        if ( action_it->second.service_count() == service_count_before_callback ) {
+            throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd" );
+        }
     }
     return Result::Type::Success;
 }
