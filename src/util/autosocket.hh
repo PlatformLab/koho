@@ -35,7 +35,7 @@ public:
       register_write();
       return buffer.cbegin();
     }
-    std::cerr << "sendto to " << saved_address_.str() << std::endl;
+    //std::cerr << "sendto to " << saved_address_.str() << std::endl;
 
     UDPSocket::sendto( saved_address_, buffer );
     return buffer.cend();

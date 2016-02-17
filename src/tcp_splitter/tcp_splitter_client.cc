@@ -81,7 +81,7 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     SplitTCPPacket received_packet( splitter_server_socket_.read() );
     assert( not received_packet.header.new_connection );
 
-    cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.header.uid << endl;
+    //cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.header.uid << endl;
     auto connection_iter = connections_.find( received_packet.header.uid );
     if ( connection_iter  == connections_.end() ) {
         cerr << "connection uid " << received_packet.header.uid <<" does not exist on client, ignoring it." << endl;
