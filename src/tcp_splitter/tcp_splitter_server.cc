@@ -17,10 +17,10 @@
 #include "exception.hh"
 
 using namespace std;
-using namespace PollerShortNames;
+using namespace EpollerShortNames;
 
 TCP_Splitter_Server::TCP_Splitter_Server( const Address & listen_address )
-    : poller(),
+    : epoller_(),
     splitter_client_socket_(),
     connections_()
 {
@@ -32,9 +32,9 @@ void TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid,
     assert( connections_.count( connection_uid ) == 0 );
     TCPSocket &newSocket = connections_[ connection_uid ].socket;
 
-    poller.add_action( Poller::Action( newSocket, Direction::In,
+    epoller_.add_action( Epoller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_client_socket_ );
+                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_client_socket_, epoller_ );
                 } ) );
 
     newSocket.connect( dest_addr );
@@ -44,7 +44,7 @@ int TCP_Splitter_Server::loop( void )
 {
     FileDescriptor & splitter_client_socket = splitter_client_socket_;
     
-    poller.add_action( Poller::Action( splitter_client_socket, Direction::In,
+    epoller_.add_action( Epoller::Action( splitter_client_socket, Direction::In,
                 [&] () {
                 SplitTCPPacket received_packet( splitter_client_socket.read() );
 
@@ -60,9 +60,8 @@ int TCP_Splitter_Server::loop( void )
                 } else {
                     assert( not received_packet.header.new_connection );
                     if ( received_packet.body.size() == 0 ) {
-                        cout<< "got eof, erasing connection " << received_packet.header.uid << endl;
-                        int erased = connections_.erase( received_packet.header.uid );
-                        assert( erased == 1 );
+                        cout << "got eof, erasing connection " << received_packet.header.uid << endl;
+                        close_connection( received_packet.header.uid, connections_, epoller_ );
                     } else {
                         assert( received_packet.body.size() > 0 );
 
@@ -75,7 +74,7 @@ int TCP_Splitter_Server::loop( void )
                 } ) );
 
     while ( true ) {
-        if ( poller.poll( -1 ).result == Poller::Result::Type::Exit ) {
+        if ( epoller_.poll( -1 ).result == Epoller::Result::Type::Exit ) {
             cerr << "exiting loop on splitter server" << endl;
             return -1;
         }

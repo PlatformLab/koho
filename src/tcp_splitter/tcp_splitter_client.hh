@@ -9,17 +9,17 @@
 
 #include "split_tcp_connection.hh"
 #include "socket.hh"
-#include "poller.hh"
+#include "epoller.hh"
 
 class EventLoop;
-using namespace PollerShortNames;
+using namespace EpollerShortNames;
 
 class TCP_Splitter_Client
 {
 private:
     TCPSocket listener_socket_;
     UDPSocket splitter_server_socket_;
-    Poller incoming_tcp_connections_;
+    Epoller epoller_;
     uint64_t next_connection_uid_ = 1;
     std::map<uint64_t, SplitTCPConnection> connections_;
 

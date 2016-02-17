@@ -7,16 +7,16 @@
 #include <map>
 
 #include "socket.hh"
-#include "poller.hh"
+#include "epoller.hh"
 #include "autosocket.hh"
 #include "split_tcp_connection.hh"
 
-class Poller;
+class Epoller;
 
 class TCP_Splitter_Server
 {
 private:
-    Poller poller;
+    Epoller epoller_;
     AutoSocket splitter_client_socket_;
     std::map<uint64_t, SplitTCPConnection> connections_; // bool if eof
 

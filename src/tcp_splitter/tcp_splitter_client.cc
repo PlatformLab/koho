@@ -11,19 +11,19 @@
 #include "system_runner.hh"
 #include "tcp_splitter_common.hh"
 #include "tcp_splitter_client.hh"
-#include "poller.hh"
+#include "epoller.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
 #include "event_loop.hh"
 #include "exception.hh"
 
 using namespace std;
-using namespace PollerShortNames;
+using namespace EpollerShortNames;
 
 TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const Address & splitter_server_addr )
     : listener_socket_(),
     splitter_server_socket_(),
-    incoming_tcp_connections_(),
+    epoller_(),
     connections_()
 {
     listener_socket_.bind( listener_addr );
@@ -34,21 +34,20 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
 
 int TCP_Splitter_Client::loop( void )
 {
-    incoming_tcp_connections_.add_action( Poller::Action( listener_socket_, Direction::In, 
+    epoller_.add_action( Epoller::Action( listener_socket_, Direction::In, 
             [&] () {
             handle_new_tcp_connection();
             return ResultType::Continue;
             } ) );
 
-    incoming_tcp_connections_.add_action( Poller::Action( splitter_server_socket_, Direction::In,
+    epoller_.add_action( Epoller::Action( splitter_server_socket_, Direction::In,
             [&] () {
             return receive_packet_from_splitter_server();
-            },
-            [&] () { return not splitter_server_socket_.eof(); } ) );
+            } ) );
 
 
     while ( true ) {
-        if ( incoming_tcp_connections_.poll( -1 ).result == Poller::Result::Type::Exit ) {
+        if ( epoller_.poll( -1 ).result == Epoller::Result::Type::Exit ) {
             cerr << "exiting loop on splitter client" << endl;
             return -1;
         }
@@ -67,10 +66,10 @@ void TCP_Splitter_Client::handle_new_tcp_connection( void )
 
         splitter_server_socket_.write( connection_metadata.toString() );
 
-        /* add poller routine so incoming datagrams on this socket go to splitter server */
-        incoming_tcp_connections_.add_action( Poller::Action( incoming_socket, Direction::In,
+        /* add epoller routine so incoming datagrams on this socket go to splitter server */
+        epoller_.add_action( Epoller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
-                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_server_socket_ );
+                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_server_socket_, epoller_ );
                     } ) );
     } catch ( const exception & e ) {
         print_exception( e );
@@ -88,10 +87,9 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
         cerr << "connection uid " << received_packet.header.uid <<" does not exist on client, ignoring it." << endl;
     } else {
         if ( received_packet.body.size() == 0 ) {
-            cerr <<" got EOF from other side, erasing connection " << received_packet.header.uid << endl;
             // splitter server received eof so done with this connection
-            int erased = connections_.erase( received_packet.header.uid );
-            assert( erased == 1 );
+            cerr <<" got EOF from other side, erasing connection " << received_packet.header.uid << endl;
+            close_connection( received_packet.header.uid, connections_, epoller_ );
         } else {
             assert( received_packet.body.size() > 0 );
             connection_iter->second.socket.write( received_packet.body );
