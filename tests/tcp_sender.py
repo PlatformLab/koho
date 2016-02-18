@@ -10,7 +10,7 @@ import signal
 
 client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-client_sock.connect(("127.0.0.1", int(sys.argv[1])))
+client_sock.connect((sys.argv[1], int(sys.argv[2])))
 
-print("sending " + sys.argv[2]) 
-client_sock.send(sys.argv[2])
+print("sending " + sys.argv[3]) 
+client_sock.send(sys.argv[3])
