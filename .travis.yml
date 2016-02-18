@@ -2,11 +2,6 @@ language: cpp
 sudo: required
 dist: trusty
 
-addons:
-  apt:
-    packages:
-    - dnsmasq
-
 before_script:
   - sudo sysctl -w net.ipv4.ip_forward=1
 
