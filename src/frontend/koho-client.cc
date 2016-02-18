@@ -107,7 +107,6 @@ int main( int argc, char *argv[] )
                     EventLoop shell_event_loop;
 
                     /* run dnsmasq as local caching nameserver */
-                    std::cout << "trying to start dnsmasq with addr " << caching_dns_server_address.str( "#" ) << std::endl;
                     shell_event_loop.add_child_process( start_dnsmasq( { "-S", caching_dns_server_address.str( "#" ) } ) );
 
                     /* Fork again after dropping root privileges */
