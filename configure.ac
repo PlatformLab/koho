@@ -38,10 +38,6 @@ if test "$DNSMASQ" = "no"; then
 fi
 AC_DEFINE_UNQUOTED([DNSMASQ], ["$DNSMASQ"], [path to dnsmasq])
 
-AC_PATH_PROG([PROTOC], [protoc], [])
-AS_IF([test x"$PROTOC" = x],
-  [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
-
 # Checks for libraries.
 
 # Checks for header files.
