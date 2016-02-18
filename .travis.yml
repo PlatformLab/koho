@@ -2,10 +2,7 @@ language: cpp
 sudo: required
 dist: trusty
 
-packages:
--- dnsmasq
-
 script:
-- ./autogen.sh
-- ./configure
-- make -j && sudo make install && make installcheck
+  - ./autogen.sh
+  - ./configure
+  - make -j && sudo make install && make installcheck
