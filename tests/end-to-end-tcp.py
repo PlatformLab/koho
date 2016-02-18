@@ -41,7 +41,7 @@ os.system("echo python tcp_sender.py %s %d %s | " % (local_address, local_port, 
 
 incoming_payload = incoming_connection.recv(payload_size)
 
-if incoming_payload == outgoing_payload:
+if incoming_payload != outgoing_payload:
     sys.stderr.write("success.\n")
     sys.exit( 0 )
 else:
