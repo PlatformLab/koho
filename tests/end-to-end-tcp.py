@@ -16,29 +16,24 @@ signal.signal(signal.SIGALRM, timeout)
 signal.alarm(2)
 
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 server_sock.bind(("0", 0))
-
 server_sock.listen(1)
 
-local_port = server_sock.getsockname()[1]
-
-splitter_server = subprocess.Popen('koho-server',
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
+splitter_server = subprocess.Popen('koho-server', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 kohoClientCommand = splitter_server.stderr.readline()
 
-payload_size = random.randint(100, 10000)
-
+payload_size = random.randint(10000, 100000) # send random size payload
 outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size))
 
-# run tcp sender inside koho-client shell
+# run tcp_sender inside koho-client shell, send to port/address of our server
+local_port = server_sock.getsockname()[1]
 local_address = kohoClientCommand.split()[3]
-os.system("echo python tcp_sender.py %s %d %s | " % (local_address, local_port, outgoing_payload) + kohoClientCommand)
+tcp_sender_command = "python tcp_sender.py %s %d %s " % (local_address, local_port, outgoing_payload)
+os.system("echo " + tcp_sender_command + " | " + kohoClientCommand)
 
+# have server accept first incoming connection, check payload is the same sent by tcp_sender
 (incoming_connection, _) = server_sock.accept()
-
 incoming_payload = incoming_connection.recv(payload_size)
 
 if incoming_payload == outgoing_payload:
