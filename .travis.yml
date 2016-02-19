@@ -1,0 +1,11 @@
+language: cpp
+sudo: required
+dist: trusty
+
+before_script:
+  - sudo sysctl -w net.ipv4.ip_forward=1
+
+script:
+  - ./autogen.sh
+  - ./configure
+  - make -j && sudo make install && make installcheck
