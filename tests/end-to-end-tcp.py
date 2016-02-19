@@ -23,7 +23,8 @@ splitter_server = subprocess.Popen('koho-server', stdout=subprocess.PIPE, stderr
 
 kohoClientCommand = splitter_server.stderr.readline()
 
-outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(10000)) #send 10k chars random data
+payload_size = 10000
+outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size)) # send payload_size random chars
 
 # run tcp_sender inside koho-client shell, send to port/address of our server
 local_port = server_sock.getsockname()[1]
