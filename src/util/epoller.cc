@@ -23,13 +23,13 @@ void Epoller::add_action( Epoller::Action && action )
     ev.events = action.direction == Direction::In ? EPOLLIN : EPOLLOUT;
     ev.data.fd = action.fd.fd_num();
 
-    SystemCall( "epoll_ctl", ::epoll_ctl( epoll_fd_, EPOLL_CTL_ADD, action.fd.fd_num(), &ev ) );
+    SystemCall( "epoll_ctl add", epoll_ctl( epoll_fd_, EPOLL_CTL_ADD, action.fd.fd_num(), &ev ) );
 }
 
 void Epoller::remove_action( int file_descriptor )
 {
     // Note: "Applications that need to be portable to kernels before 2.6.9 should specify a non-null pointer in event"
-    SystemCall( "epoll_ctl", ::epoll_ctl( epoll_fd_, EPOLL_CTL_DEL, file_descriptor, NULL ) );
+    SystemCall( "epoll_ctl del", epoll_ctl( epoll_fd_, EPOLL_CTL_DEL, file_descriptor, NULL ) );
 
     size_t num_erased = actions_.erase( file_descriptor );
     if ( num_erased != 1 ) {
@@ -48,20 +48,21 @@ Epoller::Result Epoller::poll( const int & timeout_ms )
     const int max_events = 1000;
     struct epoll_event events[max_events];
 
-    int num_fds = SystemCall( "epoll_ctl", ::epoll_wait( epoll_fd_, events, max_events, timeout_ms ) );
+    int num_fds = SystemCall( "epoll_wait", epoll_wait( epoll_fd_, events, max_events, timeout_ms ) );
    
     for (int n = 0; n < num_fds; n++) {
         auto action_it = actions_.find( events[n].data.fd );
-        assert( action_it != actions_.end() );
-        const auto service_count_before_callback = action_it->second.service_count();
-        auto callback_result = action_it->second.callback();
+        if ( action_it != actions_.end() ) { // file descriptor could not be actions_ if it was deleted after wait was called
+            const auto service_count_before_callback = action_it->second.service_count();
+            auto callback_result = action_it->second.callback();
 
-        if ( callback_result.result == ResultType::Exit) {
-            return Result( Result::Type::Exit, callback_result.exit_status );
-        }
+            if ( callback_result.result == ResultType::Exit) {
+                return Result( Result::Type::Exit, callback_result.exit_status );
+            }
 
-        if ( action_it->second.service_count() == service_count_before_callback ) {
-            throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd" );
+            if ( action_it->second.service_count() == service_count_before_callback ) {
+                throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd" );
+            }
         }
     }
     return Result::Type::Success;
