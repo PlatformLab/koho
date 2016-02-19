@@ -29,3 +29,4 @@ Makefile.in
 /compile
 /src/frontend/koho-client
 /src/frontend/koho-server
+/src/tcp_splitter/split-tcp-packet-test

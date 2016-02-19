@@ -8,7 +8,7 @@ before_script:
 script:
   - ./autogen.sh
   - ./configure
-  - make -j && sudo make install && make installcheck
+  - make -j && make check && sudo make install && make installcheck
 
 notifications:
   slack: keithw:G26dyiLS2bcQcIRrD5eHQ5qG
