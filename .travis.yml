@@ -9,3 +9,6 @@ script:
   - ./autogen.sh
   - ./configure
   - make -j && sudo make install && make installcheck
+
+notifications:
+  slack: keithw:G26dyiLS2bcQcIRrD5eHQ5qG
