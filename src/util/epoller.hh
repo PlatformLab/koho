@@ -54,7 +54,7 @@ public:
     };
 
     Epoller();
-    void add_action( Action action );
+    void add_action( Action && action );
     void remove_action( int file_descriptor );
 
     Result poll( const int & timeout_ms );

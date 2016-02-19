@@ -14,8 +14,9 @@ Epoller::Epoller( )
     epoll_fd_ = SystemCall( "epoll_create", ::epoll_create( 1 ) );
 }
 
-void Epoller::add_action( Epoller::Action action )
+void Epoller::add_action( Epoller::Action && action )
 {
+    assert( actions_.count( action.fd.fd_num() ) == 0 );
     actions_.emplace( action.fd.fd_num(), action );
 
     epoll_event ev;
