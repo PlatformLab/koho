@@ -14,5 +14,4 @@ koho_server_LDFLAGS = -pthread
 install-exec-hook:
 	chown root $(DESTDIR)$(bindir)/koho-client
 	chmod u+s $(DESTDIR)$(bindir)/koho-client
-	chown root $(DESTDIR)$(bindir)/koho-server
 	chmod u+s $(DESTDIR)$(bindir)/koho-server

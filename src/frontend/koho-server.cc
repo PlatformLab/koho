@@ -29,8 +29,6 @@ int main( int argc, char *argv[] )
     std::cerr << "koho-client 127.1 " << tcp_splitter_server.local_address().port() << " 100.64.1 " << dns_outside.udp_listener().local_address().port() << std::endl; // XXX making assumption on address
 
     main_event_loop.add_child_process( "tcp-splitter-server", [&]() {
-            drop_privileges(); // TODO needed?
-
             return tcp_splitter_server.loop();
             } );
 
