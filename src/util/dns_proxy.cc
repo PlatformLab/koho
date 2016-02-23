@@ -1,6 +1,7 @@
 /* -*-mode:c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 #include <thread>
+#include <endian.h>
 
 #include "dns_proxy.hh"
 #include "poller.hh"
@@ -19,15 +20,15 @@ SocketType make_bound_socket( const Address & listen_address )
     return sock;
 }
 
-DNSProxy::DNSProxy( const Address & listen_address, const Address & s_udp_target, const Address & s_tcp_target )
+DNSProxy::DNSProxy( const Address & listen_address, const Address & s_tcp_target )
     : DNSProxy( make_bound_socket<UDPSocket>( listen_address ),
                 make_bound_socket<TCPSocket>( listen_address ),
-                s_udp_target, s_tcp_target )
+                s_tcp_target )
 {}
 
-DNSProxy::DNSProxy( UDPSocket && udp_listener, TCPSocket && tcp_listener, const Address & s_udp_target, const Address & s_tcp_target )
+DNSProxy::DNSProxy( UDPSocket && udp_listener, TCPSocket && tcp_listener, const Address & s_tcp_target )
     : udp_listener_( move( udp_listener ) ), tcp_listener_( move( tcp_listener ) ),
-      udp_target_( s_udp_target ), tcp_target_( s_tcp_target )
+      tcp_target_( s_tcp_target )
 {
     /* make sure the sockets are bound to something */
     if ( udp_listener_.local_address() == Address() ) {
@@ -49,21 +50,34 @@ void DNSProxy::handle_udp( void )
     /* start a new thread to handle request/reply */
     thread newthread( [&] ( pair< Address, string > request ) {
             try {
-                /* send request to the DNS server */
-                UDPSocket dns_server;
-                dns_server.connect( udp_target_ );
-                dns_server.write( request.second );
+                /* connect to DNS server */
+                TCPSocket dns_server;
+                dns_server.connect( tcp_target_ );
 
-                /* wait up to 60 seconds for a reply */
-                Poller poller;
+                const uint16_t length_field = htobe16( request.second.length() );
+                string tcpified_request( reinterpret_cast<const char*>( &length_field ), sizeof( length_field ) );
+                tcpified_request.append( request.second );
 
-                poller.add_action( Poller::Action( dns_server, Direction::In,
-                                                   [&] () {
-                                                       udp_listener_.sendto( request.first,
-                                                                             dns_server.read() );
-                                                       return ResultType::Continue;
-                                                   } ) );
-                poller.poll( 60000 );
+                dns_server.write( tcpified_request );
+
+                string response_length_raw = dns_server.read( sizeof( uint16_t ) );
+                const uint16_t response_length = be16toh( *reinterpret_cast<const uint16_t *>( response_length_raw.data() ) );
+
+                string response;
+                while ( response.length() < response_length ) {
+                    string this_chunk = dns_server.read();
+                    if ( this_chunk.empty() ) {
+                        break;
+                    }
+                    response.append( this_chunk );
+                }
+
+                if ( response.size() != response_length ) {
+                    throw runtime_error( "TCP DNS response length mismatch" );
+                }
+
+                udp_listener_.sendto( request.first,
+                                      response ); /* XXX will throw exception if too long */
             } catch ( const exception & e ) {
                 print_exception( e );
                 return;
@@ -122,19 +136,6 @@ void DNSProxy::handle_tcp( void )
 
     /* don't wait around for the reply */
     newthread.detach();
-}
-
-unique_ptr<DNSProxy> DNSProxy::maybe_proxy( const Address & listen_address, const Address & s_udp_target, const Address & s_tcp_target )
-{
-    try {
-        return unique_ptr<DNSProxy>( new DNSProxy( listen_address, s_udp_target, s_tcp_target ) );
-    } catch ( const exception & e ) {
-        if ( string( e.what() ).substr( 0, 5 ) == "bind:" ) {
-            return nullptr;
-        } else {
-            throw;
-        }
-    }
 }
 
 void DNSProxy::register_handlers( EventLoop & event_loop )

@@ -117,7 +117,7 @@ int main( int argc, char *argv[] )
                     dns_tcp_listener.bind( dns_udp_listener.local_address() );
 
                     DNSProxy dns_inside_ { move( dns_udp_listener ), move( dns_tcp_listener ),
-                            tcp_dns_server_address, tcp_dns_server_address };
+                            tcp_dns_server_address };
 
                     dns_inside_.register_handlers( shell_event_loop );
 
