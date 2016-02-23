@@ -18,6 +18,7 @@
 #include "exception.hh"
 #include "dns_server.hh"
 #include "system_runner.hh"
+#include "dns_proxy.hh"
 
 #include "util.hh"
 #include "ezio.hh"
@@ -40,7 +41,7 @@ int main( int argc, char *argv[] )
         }
 
         Address tcp_splitter_server_address = { argv[ 1 ], argv[ 2 ] };
-        Address caching_dns_server_address = { argv[ 3 ], argv[ 4 ] };
+        Address tcp_dns_server_address = { argv[ 3 ], argv[ 4 ] };
 
         vector< string > command;
 
@@ -106,8 +107,22 @@ int main( int argc, char *argv[] )
                     /* prepare child's event loop */
                     EventLoop shell_event_loop;
 
+                    /* dnsmasq doesn't distinguish between UDP and TCP forwarding nameservers,
+                       so use a DNSProxy that listens on the same UDP and TCP port */
+
+                    UDPSocket dns_udp_listener;
+                    dns_udp_listener.bind( ingress_addr );
+
+                    TCPSocket dns_tcp_listener;
+                    dns_tcp_listener.bind( dns_udp_listener.local_address() );
+
+                    DNSProxy dns_inside_ { move( dns_udp_listener ), move( dns_tcp_listener ),
+                            tcp_dns_server_address, tcp_dns_server_address };
+
+                    dns_inside_.register_handlers( shell_event_loop );
+
                     /* run dnsmasq as local caching nameserver */
-                    shell_event_loop.add_child_process( start_dnsmasq( { "-S", caching_dns_server_address.str( "#" ) } ) );
+                    shell_event_loop.add_child_process( start_dnsmasq( { "-S", dns_inside_.udp_listener().local_address().str( "#" ) } ) );
 
                     /* Fork again after dropping root privileges */
                     drop_privileges();
