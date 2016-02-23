@@ -108,7 +108,7 @@ int main( int argc, char *argv[] )
                     EventLoop shell_event_loop;
 
                     /* dnsmasq doesn't distinguish between UDP and TCP forwarding nameservers,
-                       so use a DNSProxy that listens on the same UDP and TCP port */
+                       so use a DNSProxy_UDPtoTCP that listens on the same UDP and TCP port */
 
                     UDPSocket dns_udp_listener;
                     dns_udp_listener.bind( ingress_addr );
@@ -116,7 +116,7 @@ int main( int argc, char *argv[] )
                     TCPSocket dns_tcp_listener;
                     dns_tcp_listener.bind( dns_udp_listener.local_address() );
 
-                    DNSProxy dns_inside_ { move( dns_udp_listener ), move( dns_tcp_listener ),
+                    DNSProxy_UDPtoTCP dns_inside_ { move( dns_udp_listener ), move( dns_tcp_listener ),
                             tcp_dns_server_address };
 
                     dns_inside_.register_handlers( shell_event_loop );

@@ -20,29 +20,29 @@ SocketType make_bound_socket( const Address & listen_address )
     return sock;
 }
 
-DNSProxy::DNSProxy( const Address & listen_address, const Address & s_tcp_target )
-    : DNSProxy( make_bound_socket<UDPSocket>( listen_address ),
+DNSProxy_UDPtoTCP::DNSProxy_UDPtoTCP( const Address & listen_address, const Address & s_tcp_target )
+    : DNSProxy_UDPtoTCP( make_bound_socket<UDPSocket>( listen_address ),
                 make_bound_socket<TCPSocket>( listen_address ),
                 s_tcp_target )
 {}
 
-DNSProxy::DNSProxy( UDPSocket && udp_listener, TCPSocket && tcp_listener, const Address & s_tcp_target )
+DNSProxy_UDPtoTCP::DNSProxy_UDPtoTCP( UDPSocket && udp_listener, TCPSocket && tcp_listener, const Address & s_tcp_target )
     : udp_listener_( move( udp_listener ) ), tcp_listener_( move( tcp_listener ) ),
       tcp_target_( s_tcp_target )
 {
     /* make sure the sockets are bound to something */
     if ( udp_listener_.local_address() == Address() ) {
-        throw runtime_error( "DNSProxy internal error: udp_listener must be bound" );
+        throw runtime_error( "DNSProxy_UDPtoTCP internal error: udp_listener must be bound" );
     }
 
     if ( tcp_listener_.local_address() == Address() ) {
-        throw runtime_error( "DNSProxy internal error: tcp_listener must be bound" );
+        throw runtime_error( "DNSProxy_UDPtoTCP internal error: tcp_listener must be bound" );
     }
 
     tcp_listener_.listen();
 }
 
-void DNSProxy::handle_udp( void )
+void DNSProxy_UDPtoTCP::handle_udp( void )
 {
     /* get a UDP request */
     pair< Address, string > request = udp_listener_.recvfrom();
@@ -92,7 +92,7 @@ void DNSProxy::handle_udp( void )
 
 const static size_t BUFFER_SIZE = 1024 * 1024;
 
-void DNSProxy::handle_tcp( void )
+void DNSProxy_UDPtoTCP::handle_tcp( void )
 {
     /* start a new thread to handle request/reply */
     thread newthread( [&] ( Socket client ) {
@@ -138,7 +138,7 @@ void DNSProxy::handle_tcp( void )
     newthread.detach();
 }
 
-void DNSProxy::register_handlers( EventLoop & event_loop )
+void DNSProxy_UDPtoTCP::register_handlers( EventLoop & event_loop )
 {
     event_loop.add_simple_input_handler( udp_listener(),
                                          [&] () { handle_udp(); return ResultType::Continue; } );

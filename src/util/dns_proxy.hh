@@ -9,7 +9,7 @@
 
 class EventLoop;
 
-class DNSProxy
+class DNSProxy_UDPtoTCP
 {
 private:
     UDPSocket udp_listener_;
@@ -17,11 +17,11 @@ private:
     Address tcp_target_;
 
 public:
-    DNSProxy( const Address & listen_address, const Address & s_tcp_target );
+    DNSProxy_UDPtoTCP( const Address & listen_address, const Address & s_tcp_target );
 
     /* accept already-bound TCP and UDP sockets (can be useful if these
        need to be bound to the same port number) */
-    DNSProxy( UDPSocket && udp_listener, TCPSocket && tcp_listener,
+    DNSProxy_UDPtoTCP( UDPSocket && udp_listener, TCPSocket && tcp_listener,
               const Address & s_tcp_target );
 
     UDPSocket & udp_listener( void ) { return udp_listener_; }

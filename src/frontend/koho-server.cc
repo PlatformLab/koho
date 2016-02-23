@@ -23,7 +23,7 @@ int main( int argc, char *argv[] )
     const Address splitter_server_listen, dns_server;
 
     EventLoop main_event_loop;
-    DNSProxy dns_outside( dns_server, nameserver );
+    DNSProxy_UDPtoTCP dns_outside( dns_server, nameserver );
     TCP_Splitter_Server tcp_splitter_server = TCP_Splitter_Server( splitter_server_listen );
 
     std::cerr << "koho-client 127.1 " << tcp_splitter_server.local_address().port() << " 100.64.1 " << dns_outside.tcp_listener().local_address().port() << std::endl; // XXX making assumption on address
