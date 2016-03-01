@@ -60,12 +60,14 @@ int TCP_Splitter_Server::loop( void )
                 } else {
                     assert( not received_packet.header.new_connection );
                     if ( received_packet.body.size() == 0 ) {
-                        cout << "got eof, erasing connection " << received_packet.header.uid << endl;
+                        cout << "splitter server got eof, erasing connection " << received_packet.header.uid << endl;
                         close_connection( received_packet.header.uid, connections_, epoller_ );
                     } else {
                         assert( received_packet.body.size() > 0 );
 
-                        cerr << "forwarding packet with body " << received_packet.body << " to established connection" << endl;
+                        cerr << "forwarding packet with body " << received_packet.body << received_packet.body << received_packet.body << received_packet.body << " to established connection" << endl;
+                        //cout << "forwarding packet with body size " << received_packet.body.size() << endl;
+                        //std::this_thread::sleep_for(std::chrono::milliseconds(20));
                         connection_iter->second.socket.write( received_packet.body );
                     }
                 }

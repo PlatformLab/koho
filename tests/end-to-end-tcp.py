@@ -9,7 +9,7 @@ import os
 import signal
 
 def timeout(sig,frm):
-  sys.stderr.write( "Timeout." )
+  sys.stderr.write( "End-to-end test timeout." )
   sys.exit(1)
 
 # Timeout after 10 seconds
@@ -23,9 +23,10 @@ server_sock.listen(1)
 # Run a koho-server and read koho-client command arguments from stderr
 splitter_server = subprocess.Popen('koho-server', stderr=subprocess.PIPE)
 kohoClientCommand = splitter_server.stderr.readline()
+splitter_server.stderr.close() # now close stderr so it can't fill up a buffer and block our process if we print too much
 
 # make random payload
-payload_size = 100000
+payload_size = 130000
 outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size)) # send payload_size random chars
 
 # run tcp_sender inside a koho-client shell, send to port/address of our server
@@ -41,20 +42,19 @@ subprocess.Popen(tunnel_with_tcp_sender_command, shell=True)
 (incoming_connection, _) = server_sock.accept()
 
 # adapted from https://docs.python.org/2/howto/sockets.html
-chunks = []
 bytes_recvd = 0
 while bytes_recvd < payload_size:
     chunk = incoming_connection.recv(min(payload_size - bytes_recvd, 1400))
     if chunk == '':
         raise RuntimeError("socket connection broken")
-    chunks.append(chunk)
+    expected_chunk = outgoing_payload[bytes_recvd:bytes_recvd+len(chunk)]
+    if expected_chunk != chunk:
+        sys.stderr.write('\nError: expected chunk "%s" and received "%s".\n' % (expected_chunk, chunk))
+        sys.exit( 1 )
+
     bytes_recvd += len(chunk)
+    print("recieved " + str(bytes_recvd) + " of " + str(payload_size))
 
-incoming_payload = ''.join(chunks)
-
-if incoming_payload == outgoing_payload:
-    sys.stderr.write("success.\n")
-    sys.exit( 0 )
-else:
-    sys.stderr.write('\nError: expected "%s" and received "%s".\n' % (outgoing_payload, incoming_payload))
-    sys.exit( 1 )
+assert(bytes_recvd == payload_size)
+sys.stderr.write("success.\n")
+sys.exit( 0 )
