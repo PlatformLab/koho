@@ -132,11 +132,8 @@ int main( int argc, char *argv[] )
 
                     shell_event_loop.add_child_process( join( command ), [&]() {
                             prepend_shell_prefix( "[koho "+ tcp_splitter_server_address.str() + "] " );
-
-                            
-                    std::cout << "trying exec " << join( command ) << std::endl;
                             return ezexec( command, true );
-                        } );
+                    } );
 
                     return shell_event_loop.loop();
                 }, true ); /* new network namespace */

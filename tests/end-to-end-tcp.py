@@ -41,20 +41,19 @@ subprocess.Popen(tunnel_with_tcp_sender_command, shell=True)
 # have server accept first incoming connection, check payload is the same sent by tcp_sender
 (incoming_connection, _) = server_sock.accept()
 
-# adapted from https://docs.python.org/2/howto/sockets.html
 bytes_recvd = 0
 while bytes_recvd < payload_size:
     chunk = incoming_connection.recv(min(payload_size - bytes_recvd, 1400))
     if chunk == '':
         raise RuntimeError("socket connection broken")
+
     expected_chunk = outgoing_payload[bytes_recvd:bytes_recvd+len(chunk)]
     if expected_chunk != chunk:
         sys.stderr.write('\nError: expected chunk "%s" and received "%s".\n' % (expected_chunk, chunk))
         sys.exit( 1 )
 
     bytes_recvd += len(chunk)
-    print("recieved " + str(bytes_recvd) + " of " + str(payload_size))
+    #print("recieved " + str(bytes_recvd) + " of " + str(payload_size))
 
 assert(bytes_recvd == payload_size)
-sys.stderr.write("success.\n")
 sys.exit( 0 )

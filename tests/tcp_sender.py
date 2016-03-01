@@ -17,6 +17,7 @@ while totalsent < len(msg):
     if sent == 0:
         raise RuntimeError("socket connection broken")
     totalsent += sent
-print("Client finished sending " + str(totalsent) + " bytes")
+# print("Client finished sending " + str(totalsent) + " bytes")
+
 # make sure we don't clean up too early
 sleep(5)
