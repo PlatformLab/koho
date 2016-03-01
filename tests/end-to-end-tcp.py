@@ -19,11 +19,11 @@ server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_sock.bind(("0", 0))
 server_sock.listen(1)
 
-splitter_server = subprocess.Popen('koho-server', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+splitter_server = subprocess.Popen('koho-server', stderr=subprocess.PIPE)
 
 kohoClientCommand = splitter_server.stderr.readline()
 
-payload_size = 10000
+payload_size = 3000
 outgoing_payload = ''.join(random.choice(string.ascii_uppercase) for _ in range(payload_size)) # send payload_size random chars
 
 # run tcp_sender inside koho-client shell, send to port/address of our server
@@ -34,7 +34,21 @@ os.system("echo " + tcp_sender_command + " | " + kohoClientCommand)
 
 # have server accept first incoming connection, check payload is the same sent by tcp_sender
 (incoming_connection, _) = server_sock.accept()
-incoming_payload = incoming_connection.recv(payload_size)
+
+# adapted from https://docs.python.org/2/howto/sockets.html
+chunks = []
+bytes_recvd = 0
+while bytes_recvd < payload_size:
+    chunk = incoming_connection.recv(min(payload_size - bytes_recvd, 1400))
+    if chunk == '':
+        raise RuntimeError("socket connection broken")
+    chunks.append(chunk)
+    bytes_recvd += len(chunk)
+    print("read " +str(len(chunk)) + "bytes, " + str(bytes_recvd) + " total" )
+
+print("server read " + str(bytes_recvd) + " total bytes")
+
+incoming_payload = ''.join(chunks)
 
 if incoming_payload == outgoing_payload:
     sys.stderr.write("success.\n")

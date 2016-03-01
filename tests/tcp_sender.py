@@ -12,5 +12,12 @@ client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 client_sock.connect((sys.argv[1], int(sys.argv[2])))
 
-print("sending " + sys.argv[3]) 
-client_sock.send(sys.argv[3])
+msg = sys.argv[3]
+
+totalsent = 0
+while totalsent < len(msg):
+    sent = client_sock.send(msg[totalsent:])
+    if sent == 0:
+        raise RuntimeError("socket connection broken")
+    totalsent += sent
+print("Client finished sending " + str(totalsent) + " bytes")
