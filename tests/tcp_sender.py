@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-import subprocess
 import socket
 import sys
 import string
-import random
-import os
-import signal
+from time import sleep
 
 client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,3 +18,5 @@ while totalsent < len(msg):
         raise RuntimeError("socket connection broken")
     totalsent += sent
 print("Client finished sending " + str(totalsent) + " bytes")
+# make sure we don't clean up too early
+sleep(5)
