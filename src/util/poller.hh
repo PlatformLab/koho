@@ -5,7 +5,6 @@
 
 #include <functional>
 #include <vector>
-#include <list>
 #include <cassert>
 
 #include <poll.h>
@@ -31,20 +30,21 @@ public:
         enum PollDirection : short { In = POLLIN, Out = POLLOUT } direction;
         CallbackType callback;
         std::function<bool(void)> when_interested;
+        bool active;
 
         Action( FileDescriptor & s_fd,
                 const PollDirection & s_direction,
                 const CallbackType & s_callback,
                 const std::function<bool(void)> & s_when_interested = [] () { return true; } )
             : fd( s_fd ), direction( s_direction ), callback( s_callback ),
-              when_interested( s_when_interested ) {}
+              when_interested( s_when_interested ), active( true ) {}
 
         unsigned int service_count( void ) const;
     };
 
 private:
-    std::list< Action > actions_; /* List instead of vector so we can remove non MoveAssignable Actions */
-    std::vector< pollfd > pollfds_; /* contiguous entries required for poll.h system call */
+    std::vector< Action > actions_;
+    std::vector< pollfd > pollfds_;
 
 public:
     struct Result

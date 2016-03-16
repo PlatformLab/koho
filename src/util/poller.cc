@@ -23,15 +23,15 @@ Poller::Result Poller::poll( const int & timeout_ms )
     assert( pollfds_.size() == actions_.size() );
 
     /* tell poll whether we care about each fd */
-    auto action_it = actions_.begin();
-    auto pollfd_it = pollfds_.begin();
-    for ( ; action_it != actions_.end() and pollfd_it != pollfds_.end(); action_it++, pollfd_it++ ) {
-        assert( pollfd_it->fd == action_it->fd.fd_num() );
-        pollfd_it->events = action_it->when_interested() ? action_it->direction : 0;
+    for ( unsigned int i = 0; i < actions_.size(); i++ ) {
+        assert( pollfds_.at( i ).fd == actions_.at( i ).fd.fd_num() );
+        pollfds_.at( i ).events = (actions_.at( i ).active and actions_.at( i ).when_interested())
+            ? actions_.at( i ).direction : 0;
 
         /* don't poll in on fds that have had EOF */
-        if ( action_it->direction == Direction::In and action_it->fd.eof() ) {
-            pollfd_it->events = 0;
+        if ( actions_.at( i ).direction == Direction::In
+             and actions_.at( i ).fd.eof() ) {
+            pollfds_.at( i ).events = 0;
         }
     }
 
@@ -45,44 +45,32 @@ Poller::Result Poller::poll( const int & timeout_ms )
         return Result::Type::Timeout;
     }
 
-    action_it = actions_.begin();
-    pollfd_it = pollfds_.begin();
-    while ( action_it != actions_.end() and pollfd_it != pollfds_.end() ) {
-        if ( pollfd_it->revents & (POLLERR | POLLHUP | POLLNVAL) ) {
-            /* remove unusable fd's  */
-            action_it = actions_.erase( action_it );
-            pollfd_it = pollfds_.erase( pollfd_it );
-            assert( pollfds_.size() == actions_.size() );
-            cout << "deleting bad FD (probably closed)" << endl;
-            continue;
+    for ( unsigned int i = 0; i < pollfds_.size(); i++ ) {
+        if ( pollfds_[ i ].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
+            //            throw Exception( "poll fd error" );
+            return Result::Type::Exit;
         }
 
-        if ( pollfd_it->revents & pollfd_it->events ) {
+        if ( pollfds_[ i ].revents & pollfds_[ i ].events ) {
             /* we only want to call callback if revents includes
                the event we asked for */
-            const auto count_before = action_it->service_count();
-            auto result = action_it->callback();
+            const auto count_before = actions_.at( i ).service_count();
+            auto result = actions_.at( i ).callback();
 
             switch ( result.result ) {
             case ResultType::Exit:
                 return Result( Result::Type::Exit, result.exit_status );
             case ResultType::Cancel:
-                /* remove cancelled actions */
-                action_it = actions_.erase( action_it );
-                pollfd_it = pollfds_.erase( pollfd_it );
-                assert( pollfds_.size() == actions_.size() );
-                cout << "deleting cancelled actoin" << endl;
-                continue; // don't increment twice
+                actions_.at( i ).active = false;
+                break;
             case ResultType::Continue:
                 break;
             }
 
-            if ( count_before == action_it->service_count() ) {
+            if ( count_before == actions_.at( i ).service_count() ) {
                 throw runtime_error( "Poller: busy wait detected: callback did not read/write fd" );
             }
         }
-        action_it++;
-        pollfd_it++;
     }
 
     return Result::Type::Success;
