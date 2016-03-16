@@ -13,7 +13,6 @@
 #include "tcp_splitter_server.hh"
 #include "bytestream_queue.hh"
 #include "file_descriptor.hh"
-#include "event_loop.hh"
 #include "exception.hh"
 
 using namespace std;
