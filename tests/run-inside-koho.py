@@ -8,7 +8,7 @@ import random
 import os
 import signal
 
-# Takes a client program to run inside a koho tunnel.
+# Takes a client program to run inside a koho tunnel. exits
 
 def timeout(sig,frm):
   sys.stderr.write( "End-to-end test timeout." )
@@ -22,8 +22,14 @@ if len( sys.argv ) is not 2:
     raise ValueError("Usage: python run-insinde-koho-tunnel.py command_to_run")
 
 # Run a koho-server and read koho-client command arguments from stderr
-splitter_server = subprocess.Popen('koho-server', stderr=subprocess.PIPE)
-kohoClientCommand = splitter_server.stderr.readline()
-splitter_server.stderr.close() # now close stderr so it can't fill up a buffer and block our process if we print too much
+kohoServer = subprocess.Popen('koho-server', stderr=subprocess.PIPE)
+kohoClientCommand = kohoServer.stderr.readline()
+kohoServer.stderr.close() # now close stderr so it can't fill up a buffer and block our process if we print too much
 
-subprocess.check_call("echo " + sys.argv[1] + " | " + kohoClientCommand, shell=True)
+kohoClient = subprocess.Popen("echo " + sys.argv[1] + " | " + kohoClientCommand, shell=True)
+while 1:
+    assert(kohoServer.poll() is None) # assert koho server didnt crash
+    clientReturnCode = kohoClient.poll()
+    if clientReturnCode is not None:
+        print "client got return %d" % clientReturnCode
+        sys.exit(clientReturnCode)
