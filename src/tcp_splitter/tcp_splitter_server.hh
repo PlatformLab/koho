@@ -23,7 +23,7 @@ private:
 public:
     TCP_Splitter_Server( const Address & listen_address );
 
-    void establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr );
+    bool establish_new_tcp_connection( uint64_t connection_uid, Address &dest_addr );
 
     Address local_address( void ) { return splitter_client_socket_.local_address( ); }
 
