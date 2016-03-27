@@ -73,7 +73,7 @@ void DNSProxy_UDPtoTCP::handle_udp( void )
                 }
 
                 if ( response.size() != response_length ) {
-                    throw runtime_error( "TCP DNS response length mismatch" );
+                    throw runtime_error( "TCP DNS response length mismatch, got " + response.size() + std::string( " but expected " + response_length ) );
                 }
 
                 udp_listener_.sendto( request.first,

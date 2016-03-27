@@ -61,7 +61,7 @@ Epoller::Result Epoller::poll( const int & timeout_ms )
             }
 
             if ( action_it->second.service_count() == service_count_before_callback ) {
-                throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd" );
+                throw runtime_error( "Epoller: busy wait detected: callback did not read/write fd " + action_it->second.fd.fd_num() );
             }
         }
     }
