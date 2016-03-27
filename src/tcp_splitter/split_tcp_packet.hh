@@ -30,7 +30,7 @@ struct SplitTCPPacket {
 
     std::string toString() const;
 
-    SplitTCPPacket( std::string str );
+    SplitTCPPacket( const std::string &str );
 };
 
 

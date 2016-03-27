@@ -52,7 +52,7 @@ std::string SplitTCPPacket::toString() const
 }
 
 /* Parse from string */
-SplitTCPPacket::SplitTCPPacket( std::string str )  // TODO change to const &
+SplitTCPPacket::SplitTCPPacket( const std::string &str )
     : header( str ),
     body( str.begin() + sizeof( Header ), str.end() )
 { }
