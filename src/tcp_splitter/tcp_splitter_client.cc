@@ -87,7 +87,7 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     } else {
         if ( received_packet.body.size() == 0 ) {
             // splitter server received eof so done with this connection
-            cerr <<" got EOF from other side, erasing connection " << received_packet.header.uid << endl;
+            cerr <<" got EOF from other side, erasing connection uid " << received_packet.header.uid << endl;
             close_connection( received_packet.header.uid, connections_, epoller_ );
         } else {
             assert( received_packet.body.size() > 0 );

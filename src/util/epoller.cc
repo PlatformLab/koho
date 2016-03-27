@@ -34,8 +34,9 @@ void Epoller::remove_action( int file_descriptor )
     size_t num_erased = actions_.erase( file_descriptor );
     if ( num_erased != 1 ) {
         cerr << "problem erasing fd " << file_descriptor << endl;
+    } else {
+        cerr << "epoll erased fd " << file_descriptor << endl;
     }
-    cerr << "epoll erased fd " << file_descriptor << endl;
 }
 
 unsigned int Epoller::Action::service_count( void ) const

@@ -41,7 +41,7 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
     }
 
     if ( body.size() == 0 ) {
-        std::cerr <<"Closing connection on EOF" << std::endl;
+        std::cerr <<"Closing connection uid " << connection_uid << " on recieved EOF" << std::endl;
         close_connection( connection_uid, connection_map, epoller );
     }
     SplitTCPPacket toSend( false, connection_uid, body );
