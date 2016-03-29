@@ -6,8 +6,8 @@
 Makefile
 Makefile.in
 /test-driver
-/tests/*.log
-/tests/*.trs
+*.log
+*.trs
 
 /INSTALL
 /aclocal.m4
