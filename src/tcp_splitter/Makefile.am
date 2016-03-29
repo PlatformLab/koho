@@ -7,11 +7,10 @@ libtcpsplitter_a_SOURCES = tcp_splitter_server.hh tcp_splitter_server.cc \
                            tcp_splitter_common.hh split_tcp_connection.hh \
                            split_tcp_packet.hh split_tcp_packet.cc
 
-bin_PROGRAMS = split-tcp-packet-test
+check_PROGRAMS = split-tcp-packet-test
 split_tcp_packet_test_SOURCES = split_tcp_packet_test.cc \
                                 split_tcp_packet.hh split_tcp_packet.cc
 split_tcp_packet_test_LDADD = -lrt ../util/libutil.a
 split_tcp_packet_test_LDFLAGS = -pthread
 
-check-local:
-	$(srcdir)/split-tcp-packet-test
+TESTS = split-tcp-packet-test
