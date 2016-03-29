@@ -4,6 +4,7 @@
 #define TCP_SPLITTER_CLIENT_HH 
 
 #include <string>
+#include <mutex>
 #include <vector>
 #include <map>
 
@@ -21,6 +22,7 @@ private:
     UDPSocket splitter_server_socket_;
     Epoller epoller_;
     uint64_t next_connection_uid_ = 1;
+    std::mutex connections_mutex_;
     std::map<uint64_t, SplitTCPConnection> connections_;
 
 public:

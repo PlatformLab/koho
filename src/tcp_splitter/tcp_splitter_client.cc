@@ -23,6 +23,7 @@ TCP_Splitter_Client::TCP_Splitter_Client( const Address & listener_addr, const A
     : listener_socket_(),
     splitter_server_socket_(),
     epoller_(),
+    connections_mutex_(),
     connections_()
 {
     listener_socket_.bind( listener_addr );
@@ -55,24 +56,26 @@ int TCP_Splitter_Client::loop( void )
 
 void TCP_Splitter_Client::handle_new_tcp_connection( void )
 {
+    connections_mutex_.lock();
     try {
-        auto connection_iter = connections_.emplace( make_pair(get_connection_uid(), listener_socket_.accept() )).first;
+        auto connection_iter = connections_.emplace( make_pair( get_connection_uid(), listener_socket_.accept() ) ).first;
         const uint64_t connection_uid = connection_iter->first;
         TCPSocket & incoming_socket = connection_iter->second.socket;
 
         /* send packet of metadata on this connectio to tcp splitter server so it can make its own connection to original client destination */
         SplitTCPPacket connection_metadata( true, connection_uid, incoming_socket.original_dest().str() );
-
+        // TODO tighten critical section
         splitter_server_socket_.write( connection_metadata.toString() );
-
         /* add epoller routine so incoming datagrams on this socket go to splitter server */
         epoller_.add_action( Epoller::Action( incoming_socket, Direction::In,
                     [&, connection_uid ] () {
-                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_server_socket_, epoller_ );
+                    return receive_bytes_from_tcp_connection( connections_mutex_, connections_, connection_uid, splitter_server_socket_, epoller_ );
                     } ) );
     } catch ( const exception & e ) {
+        connections_mutex_.unlock();
         print_exception( e );
     }
+    connections_mutex_.unlock();
 }
 
 Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
@@ -81,6 +84,7 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
     assert( not received_packet.header.new_connection );
 
     //cerr << "DATA FROM SPLITTER SERVER for uid " << received_packet.header.uid << endl;
+    connections_mutex_.lock();
     auto connection_iter = connections_.find( received_packet.header.uid );
     if ( connection_iter  == connections_.end() ) {
         cerr << "connection uid " << received_packet.header.uid <<" does not exist on client, ignoring it." << endl;
@@ -94,5 +98,6 @@ Result TCP_Splitter_Client::receive_packet_from_splitter_server( void )
             connection_iter->second.socket.write( received_packet.body );
         }
     }
+    connections_mutex_.unlock();
     return ResultType::Continue;
 }

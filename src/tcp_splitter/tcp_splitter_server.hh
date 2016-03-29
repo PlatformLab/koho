@@ -5,6 +5,7 @@
 
 #include <string>
 #include <map>
+#include <mutex>
 
 #include "socket.hh"
 #include "epoller.hh"
@@ -18,6 +19,7 @@ class TCP_Splitter_Server
 private:
     Epoller epoller_;
     AutoSocket splitter_client_socket_;
+    std::mutex connections_mutex_;
     std::map<uint64_t, SplitTCPConnection> connections_; // bool if eof
 
 public:

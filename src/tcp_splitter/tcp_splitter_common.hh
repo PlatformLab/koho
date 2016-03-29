@@ -5,6 +5,7 @@
 
 #include <string>
 #include <map>
+#include <mutex>
 
 #include "epoller.hh"
 #include "socket.hh"
@@ -26,13 +27,15 @@ inline void close_connection( uint64_t connection_uid, std::map<uint64_t, SplitT
     connection_map.erase( connection_it );
 }
 
-ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket, Epoller &epoller )
+ResultType receive_bytes_from_tcp_connection( std::mutex &connection_map_mutex, std::map<uint64_t, SplitTCPConnection> &connection_map, const uint64_t connection_uid, FileDescriptor &other_side_socket, Epoller &epoller )
 {
     std::string body;
+    connection_map_mutex.lock();
     { // we might be deleting this socket later so don't use it outside here
         auto connection_iter = connection_map.find( connection_uid );
         if ( connection_iter  == connection_map.end() ) {
             std::cerr << "connection uid " << connection_uid <<" does not exist, ignoring it." << std::endl;
+            connection_map_mutex.unlock();
             return ResultType::Continue;
         }
         TCPSocket & incoming_socket = connection_iter->second.socket;
@@ -44,6 +47,7 @@ ResultType receive_bytes_from_tcp_connection( std::map<uint64_t, SplitTCPConnect
         std::cerr <<"Closing connection uid " << connection_uid << " on recieved EOF" << std::endl;
         close_connection( connection_uid, connection_map, epoller );
     }
+    connection_map_mutex.unlock();
     SplitTCPPacket toSend( false, connection_uid, body );
     other_side_socket.write( toSend.toString() );
     return body.size() == 0 ? ResultType::Cancel : ResultType::Continue;

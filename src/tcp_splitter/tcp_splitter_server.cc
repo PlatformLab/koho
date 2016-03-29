@@ -21,6 +21,7 @@ using namespace EpollerShortNames;
 TCP_Splitter_Server::TCP_Splitter_Server( const Address & listen_address )
     : epoller_(),
     splitter_client_socket_(),
+    connections_mutex_(),
     connections_()
 {
     splitter_client_socket_.bind( listen_address );
@@ -41,7 +42,7 @@ bool TCP_Splitter_Server::establish_new_tcp_connection( uint64_t connection_uid,
 
     epoller_.add_action( Epoller::Action( newSocket, Direction::In,
                 [&, connection_uid] () {
-                    return receive_bytes_from_tcp_connection( connections_, connection_uid, splitter_client_socket_, epoller_ );
+                    return receive_bytes_from_tcp_connection( connections_mutex_, connections_, connection_uid, splitter_client_socket_, epoller_ );
                 } ) );
     return true;
 }
@@ -55,6 +56,7 @@ int TCP_Splitter_Server::loop( void )
                 SplitTCPPacket received_packet( splitter_client_socket.read() );
 
                 cerr << "DATA FROM SPLITTER CLIENT uid " << received_packet.header.uid << endl;
+                connections_mutex_.lock();
                 auto connection_iter = connections_.find( received_packet.header.uid );
                 if ( connection_iter == connections_.end() ) {
                     if ( not received_packet.header.new_connection ) {
@@ -86,7 +88,7 @@ int TCP_Splitter_Server::loop( void )
                         connection_iter->second.socket.write( received_packet.body );
                     }
                 }
-
+                connections_mutex_.unlock();
                 return ResultType::Continue;
                 } ) );
 
